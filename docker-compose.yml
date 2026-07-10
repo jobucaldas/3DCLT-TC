@@ -1,0 +1,139 @@
+services:
+  analytics-service:
+    build: ../analytics-service
+    ports:
+      - "8005:8005"
+    env_file:
+      - ../analytics-service/.env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8005/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  auth-service:
+    build: ../auth-service
+    ports:
+      - "8001:8001"
+    env_file:
+      - ../auth-service/.env
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8001/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  evaluation-service:
+    build: ../evaluation-service
+    ports:
+      - "8004:8004"
+    env_file:
+      - ../evaluation-service/.env
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      flag-service:
+        condition: service_healthy
+      targeting-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8004/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  flag-service:
+    build: ../flag-service
+    ports:
+      - "8002:8002"
+    env_file:
+      - ../flag-service/.env
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      flag-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8002/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  targeting-service:
+    build: ../targeting-service
+    ports:
+      - "8003:8003"
+    env_file:
+      - ../targeting-service/.env
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      targeting-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8003/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: docker.io/redis:8.8.0-alpine3.23
+
+  dynamodb:
+    image: docker.io/amazon/dynamodb-local:3.3.0
+    ports:
+      - "8000:8000"
+
+  auth-postgres:
+    image: docker.io/postgres:18.4-alpine3.24
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=auth_db
+    volumes:
+      - auth_postgres_data:/var/lib/postgresql/
+      - ../auth-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  flag-postgres:
+    image: docker.io/postgres:18.4-alpine3.24
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=flags_db
+    volumes:
+      - flag_postgres_data:/var/lib/postgresql/
+      - ../flag-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  targeting-postgres:
+    image: docker.io/postgres:18.4-alpine3.24
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=targeting_db
+    volumes:
+      - targeting_postgres_data:/var/lib/postgresql/
+      - ../targeting-service/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  targeting_postgres_data:
+  auth_postgres_data:
+  flag_postgres_data:
