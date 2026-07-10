@@ -6,20 +6,20 @@
 
 ```bash
 # With SSH
-git clone git@github.com:jobucaldas/3DCLT-TC.git
-git clone git@github.com:jobucaldas/auth-service.git
-git clone git@github.com:jobucaldas/analytics-service.git
-git clone git@github.com:jobucaldas/evaluation-service.git
-git clone git@github.com:jobucaldas/flag-service.git
-git clone git@github.com:jobucaldas/targeting-service.git
+git clone -b t2 git@github.com:jobucaldas/3DCLT-TC.git
+git clone -b t2 git@github.com:jobucaldas/auth-service.git
+git clone -b t2 git@github.com:jobucaldas/analytics-service.git
+git clone -b t2 git@github.com:jobucaldas/evaluation-service.git
+git clone -b t2 git@github.com:jobucaldas/flag-service.git
+git clone -b t2 git@github.com:jobucaldas/targeting-service.git
 
 # With HTTPS
-git clone https://github.com/jobucaldas/3DCLT-TC.git
-git clone https://github.com/jobucaldas/auth-service.git
-git clone https://github.com/jobucaldas/analytics-service.git
-git clone https://github.com/jobucaldas/evaluation-service.git
-git clone https://github.com/jobucaldas/flag-service.git
-git clone https://github.com/jobucaldas/targeting-service.git
+git clone -b t2 https://github.com/jobucaldas/3DCLT-TC.git
+git clone -b t2 https://github.com/jobucaldas/auth-service.git
+git clone -b t2 https://github.com/jobucaldas/analytics-service.git
+git clone -b t2 https://github.com/jobucaldas/evaluation-service.git
+git clone -b t2 https://github.com/jobucaldas/flag-service.git
+git clone -b t2 https://github.com/jobucaldas/targeting-service.git
 ```
 
 2. Create a `.env` file in the root of each directory with the following content:
