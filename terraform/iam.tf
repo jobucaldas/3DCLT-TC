@@ -88,3 +88,98 @@ resource "aws_iam_role_policy" "app_aws_access" {
   })
 }
 
+data "tls_certificate" "eks_oidc" {
+  url = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  url             = aws_eks_cluster.main.identity[0].oidc[0].issuer
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks_oidc.certificates[0].sha1_fingerprint]
+
+  tags = local.common_tags
+}
+
+locals {
+  eks_oidc_provider = replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")
+}
+
+resource "aws_iam_role" "external_secrets" {
+  name = "${var.project_name}-external-secrets-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.eks.arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "${local.eks_oidc_provider}:aud" = "sts.amazonaws.com"
+          "${local.eks_oidc_provider}:sub" = "system:serviceaccount:external-secrets:external-secrets"
+        }
+      }
+    }]
+  })
+
+  tags = local.common_tags
+}
+
+resource "aws_iam_role_policy" "external_secrets_read" {
+  name = "${var.project_name}-external-secrets-read"
+  role = aws_iam_role.external_secrets.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
+      ]
+      Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/*"
+    }]
+  })
+}
+
+resource "aws_iam_role" "keda_operator" {
+  name = "${var.project_name}-keda-operator-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.eks.arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "${local.eks_oidc_provider}:aud" = "sts.amazonaws.com"
+          "${local.eks_oidc_provider}:sub" = "system:serviceaccount:keda:keda-operator"
+        }
+      }
+    }]
+  })
+
+  tags = local.common_tags
+}
+
+resource "aws_iam_role_policy" "keda_sqs" {
+  name = "${var.project_name}-keda-sqs-read"
+  role = aws_iam_role.keda_operator.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl"
+      ]
+      Resource = aws_sqs_queue.events.arn
+    }]
+  })
+}

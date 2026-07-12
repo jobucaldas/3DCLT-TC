@@ -8,4 +8,5 @@ resources:
   - targeting-service
   - evaluation-service
   - analytics-service
+  - eso
   - ingress

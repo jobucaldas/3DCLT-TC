@@ -5,6 +5,6 @@ namespace: togglemaster-flag
 
 resources:
   - configmap.yaml
-  - secret.yaml
+  - external-secret.yaml
   - service.yaml
   - deployment.yaml

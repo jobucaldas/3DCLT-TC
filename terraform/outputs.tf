@@ -42,14 +42,20 @@ output "dynamodb_table_name" {
   value = aws_dynamodb_table.analytics.name
 }
 
-output "kubernetes_secret_values_to_encode" {
-  description = "Values to base64 encode and place in k8s/*/secret.yaml."
+output "keda_operator_role_arn" {
+  value = aws_iam_role.keda_operator.arn
+}
+
+output "external_secrets_role_arn" {
+  value = aws_iam_role.external_secrets.arn
+}
+
+output "kubernetes_secret_values" {
+  description = "Values to add unto aws secret manager."
   sensitive   = true
   value = {
     auth_database_url      = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres["auth"].address}:5432/auth_db"
     flag_database_url      = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres["flag"].address}:5432/flags_db"
     targeting_database_url = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres["targeting"].address}:5432/targeting_db"
-    redis_url              = "redis://${aws_elasticache_cluster.redis.cache_nodes[0].address}:6379"
-    sqs_url                = aws_sqs_queue.events.url
   }
 }

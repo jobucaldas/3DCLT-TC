@@ -92,6 +92,13 @@ terraform output ecr_repository_urls
 
 Faca o build, tag e push da imagem de cada servico para seu respectivo repositorio ECR.
 
+docker build -t $(terraform output -raw ecr_repository_urls | jq -r '.auth_service') ../auth-service
+docker build -t $(terraform output -raw ecr_repository_urls | jq -r '.auth_service') ../analytics-service
+docker build -t $(terraform output -raw ecr_repository_urls | jq -r '.auth_service') ../evaluation-service
+docker build -t $(terraform output -raw ecr_repository_urls | jq -r '.auth_service') ../flag-service
+docker build -t $(terraform output -raw ecr_repository_urls | jq -r '.auth_service') ../targeting-service
+```
+
 ## 6. Atualizar Secrets e imagens do Kubernetes
 
 Use este output para pegar os valores reais dos Secrets:
