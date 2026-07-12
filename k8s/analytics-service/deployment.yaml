@@ -12,6 +12,7 @@ spec:
       labels:
         app: analytics-service
     spec:
+      serviceAccountName: analytics-service
       containers:
         - name: analytics-service
           image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/analytics-service:1.0.0

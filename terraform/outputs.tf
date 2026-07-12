@@ -50,6 +50,10 @@ output "external_secrets_role_arn" {
   value = aws_iam_role.external_secrets.arn
 }
 
+output "app_pods_role_arn" {
+  value = aws_iam_role.app_pods.arn
+}
+
 output "kubernetes_secret_values" {
   description = "Values to add unto aws secret manager."
   sensitive   = true

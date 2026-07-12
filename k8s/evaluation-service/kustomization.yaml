@@ -6,6 +6,7 @@ namespace: togglemaster-evaluation
 resources:
   - configmap.yaml
   - external-secret.yaml
+  - serviceaccount.yaml
   - service.yaml
   - deployment.yaml
   - hpa.yaml

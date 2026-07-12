@@ -6,6 +6,7 @@ namespace: togglemaster-analytics
 resources:
   - configmap.yaml
   - external-secret.yaml
+  - serviceaccount.yaml
   - service.yaml
   - deployment.yaml
   - scaled-object.yaml

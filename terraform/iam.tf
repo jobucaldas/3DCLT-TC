@@ -60,7 +60,7 @@ resource "aws_iam_role_policy_attachment" "ecr_read_only" {
 
 resource "aws_iam_role_policy" "app_aws_access" {
   name = "${var.project_name}-app-aws-access"
-  role = aws_iam_role.eks_node_group.id
+  role = aws_iam_role.app_pods.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -102,6 +102,34 @@ resource "aws_iam_openid_connect_provider" "eks" {
 
 locals {
   eks_oidc_provider = replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")
+}
+
+resource "aws_iam_role" "app_pods" {
+  name = "${var.project_name}-app-pods-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.eks.arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "${local.eks_oidc_provider}:aud" = "sts.amazonaws.com"
+        }
+        StringLike = {
+          "${local.eks_oidc_provider}:sub" = [
+            "system:serviceaccount:togglemaster-evaluation:evaluation-service",
+            "system:serviceaccount:togglemaster-analytics:analytics-service"
+          ]
+        }
+      }
+    }]
+  })
+
+  tags = local.common_tags
 }
 
 resource "aws_iam_role" "external_secrets" {
