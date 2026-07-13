@@ -13,4 +13,4 @@ Repos:
 - [flag-service](https://github.com/jobucaldas/flag-service/tree/t2)
 - [targeting-service](https://github.com/jobucaldas/targeting-service/tree/t2)
 
-Vídeo: [youtube](https://www.youtube.com/)
+Vídeo: [youtube](https://youtu.be/iMdWhg4UhBo)
