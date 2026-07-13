@@ -1,15 +1,16 @@
-Olá, somos o grupo composto pelo
-João Victor Bueno de Caldas,
-Gabriel Espanguero Gonzales
+Olá, estou apresentando o trabalho do nosso grupo no curso 3DCLT da FIAP, sendo este o Tech Challenge 2
+Nosso grupo é composto por mim, João Victor Bueno de Caldas,
+e pelo Gabriel Espanguero Gonzales
 
-Aqui temos a aplicacão junto ao arquivos de containers configurados
+Iniciarei mostrando a aplicacão e os arquivos de containerizacão configurados
 
 (mostrar dockerfiles)
 
 Como podem ver, o mesmo foi montado de forma a incluir boas práticas de seguranca como
 multistage build, imagens minimas (no caso utilizamos alpine) e usuarios locais do container
 
-Isto causou alguns problemas devido ao build da aplicacão falhar ao importar algumas das libs musl
+Isto causou alguns problemas devido ao build da aplicacão falhar ao importar algumas das libs musl compativeis com o alpine
+Sendo necessário especificar a versão do Werkzeug para o build
 
 Assim, alteramos o import destas libs para definir a versão correta compativel com o alpine
 e removemos algumas libs importadas que impossibilitavam o build do executavel do go
@@ -32,16 +33,12 @@ separado do ambiente 'prod' para não incorrer em custos
 Agora vou rodar um script que montei pra criar as chaves que os servicos vão usar
 
 ```bash
-setupServices.sh --local
+setupServices.sh
 ```
 
 E podemos ver a funcionalidade com alguns requests nos servicos
 
-```bash
-# Fazer requests nele
-
-test
-```
+**(Fazer testes retornados pelo setupServices)**
 
 ---
 
@@ -93,6 +90,10 @@ aws secretsmanager put-secret-value \
 ```
 
 (Voltar aqui)
+
+---
+
+(abrir navegador)
 
 Podemos ver eles criados agora
 
@@ -230,8 +231,17 @@ Ele está configurado para escalar 1 novo pod a cada 5 mensagens, com mínimo de
 
 ---
 
-// TODO: mostrar teste de carga com hey, ab ou postman
-// TODO: Enviar mensagens no SQS e mostrar o KEDA escalando os pods
-// TODO: mostrar dados no dynamoDB
-// TODO: falar sobre desafios
+(acessar SQS)
+
+Agora aqui no SQS podemos mandar várias mensagens para ver o KEDA escalando os pods
+
+(mostrar `watch -n 5 kubectl get po -A`)
+
+Novamente vou rodar outro script pra fazer o bootstrap das flags dos servicos e a gente ver o comportamento do scale
+
+```bash
+./k8sBootstrap.sh
+```
+
+Por fim, vamos ver no DynamoDB os dados que foram processados pelos pods do evaluation service
 
