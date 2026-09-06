@@ -1,0 +1,47 @@
+name: Security Tests
+
+on:
+  push:
+    branches:
+      - main
+      - t2
+      - t3
+  pull_request:
+
+jobs:
+  gitleaks:
+    name: Check for Secrets with Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  sca:
+    name: Software Composition Analysis w/ Trivy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Trivy Scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          format: console, sarif
+          output: trivy-report.json
+
+      - name: Save Trivy Report
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: trivy-report
+          path: trivy-report.json
+
+      - name: SARIF Upload
+        uses: github/codeql-action/upload-sarif@v4.37.9
+        with:
+          sarif_file: trivy-report.json

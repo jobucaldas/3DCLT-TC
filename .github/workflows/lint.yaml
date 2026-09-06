@@ -1,0 +1,59 @@
+name: Lint Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - t2
+      - t3
+  pull_request:
+
+jobs:
+  kube-lint:
+    name: Lint Kubernetes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Lint Kubernetes Manifests
+        uses: stackrox/kube-linter-action@v1.0.4
+        with:
+          directory: k8s
+          format: sarif
+          output-file: kube-linter.sarif
+
+      - name: Upload Kube Linter SARIF Report
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: kube-linter-report
+          path: kube-linter.sarif
+
+  tf-lint:
+    name: Lint Terraform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: terraform-linters/setup-tflint@v6
+        name: Setup TFLint
+        with:
+          tflint_version: v0.64.0
+          cache: true
+
+      - name: Show version
+        run: tflint --version
+
+      - name: Init TFLint
+        run: tflint --init
+        env:
+          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Run TFLint
+        run: tflint -f sarif > tflint.sarif
+
+      - name: Upload TFLint SARIF Report
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: tflint-report
+          path: tflint.sarif
