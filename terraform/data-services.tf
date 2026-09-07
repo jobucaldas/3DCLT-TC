@@ -1,6 +1,6 @@
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-rds-subnets"
-  subnet_ids = aws_subnet.private[*].id
+  subnet_ids = module.vpc.private_subnet_ids
 
   tags = merge(local.common_tags, {
     Name = "${var.project_name}-rds-subnets"
@@ -34,7 +34,7 @@ resource "aws_db_instance" "postgres" {
 
 resource "aws_elasticache_subnet_group" "main" {
   name       = "${var.project_name}-redis-subnets"
-  subnet_ids = aws_subnet.private[*].id
+  subnet_ids = module.vpc.private_subnet_ids
 
   tags = local.common_tags
 }

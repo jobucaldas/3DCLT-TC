@@ -7,7 +7,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
   enable_dns_support   = true
 
-  tags = merge(local.common_tags, {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-vpc"
   })
 }
@@ -15,7 +15,7 @@ resource "aws_vpc" "main" {
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
-  tags = merge(local.common_tags, {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-igw"
   })
 }
@@ -28,7 +28,7 @@ resource "aws_subnet" "public" {
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = true
 
-  tags = merge(local.common_tags, {
+  tags = merge(var.common_tags, {
     Name                                            = "${var.project_name}-public-${count.index + 1}"
     "kubernetes.io/role/elb"                        = "1"
     "kubernetes.io/cluster/${var.project_name}-eks" = "shared"
@@ -43,7 +43,7 @@ resource "aws_subnet" "private" {
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = false
 
-  tags = merge(local.common_tags, {
+  tags = merge(var.common_tags, {
     Name                                            = "${var.project_name}-private-${count.index + 1}"
     "kubernetes.io/role/internal-elb"               = "1"
     "kubernetes.io/cluster/${var.project_name}-eks" = "shared"
@@ -58,7 +58,7 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = merge(local.common_tags, {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-public-rt"
   })
 }
@@ -75,7 +75,7 @@ resource "aws_eip" "nat" {
 
   domain = "vpc"
 
-  tags = merge(local.common_tags, {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-nat-eip-${count.index + 1}"
   })
 }
@@ -86,7 +86,7 @@ resource "aws_nat_gateway" "main" {
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
 
-  tags = merge(local.common_tags, {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-nat-${count.index + 1}"
   })
 
@@ -103,7 +103,7 @@ resource "aws_route_table" "private" {
     nat_gateway_id = aws_nat_gateway.main[count.index].id
   }
 
-  tags = merge(local.common_tags, {
+  tags = merge(var.common_tags, {
     Name = "${var.project_name}-private-rt-${count.index + 1}"
   })
 }
@@ -115,35 +115,3 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private[count.index].id
 }
 
-resource "aws_security_group" "data" {
-  name        = "${var.project_name}-data-sg"
-  description = "Allows EKS nodes to reach RDS and Redis."
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    description     = "PostgreSQL from EKS nodes"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_eks_cluster.main.vpc_config[0].cluster_security_group_id]
-  }
-
-  ingress {
-    description     = "Redis from EKS nodes"
-    from_port       = 6379
-    to_port         = 6379
-    protocol        = "tcp"
-    security_groups = [aws_eks_cluster.main.vpc_config[0].cluster_security_group_id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = merge(local.common_tags, {
-    Name = "${var.project_name}-data-sg"
-  })
-}

@@ -89,11 +89,11 @@ resource "aws_iam_role_policy" "app_aws_access" {
 }
 
 data "tls_certificate" "eks_oidc" {
-  url = aws_eks_cluster.main.identity[0].oidc[0].issuer
+  url = module.cluster.cluster_oidc_issuer_url
 }
 
 resource "aws_iam_openid_connect_provider" "eks" {
-  url             = aws_eks_cluster.main.identity[0].oidc[0].issuer
+  url             = module.cluster.cluster_oidc_issuer_url
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = [data.tls_certificate.eks_oidc.certificates[0].sha1_fingerprint]
 
@@ -101,7 +101,7 @@ resource "aws_iam_openid_connect_provider" "eks" {
 }
 
 locals {
-  eks_oidc_provider = replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")
+  eks_oidc_provider = replace(module.cluster.cluster_oidc_issuer_url, "https://", "")
 }
 
 resource "aws_iam_role" "app_pods" {

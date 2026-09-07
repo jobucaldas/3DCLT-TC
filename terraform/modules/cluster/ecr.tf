@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "service" {
-  for_each = toset(local.services)
+  for_each = toset(var.services)
 
   name         = each.value
   force_delete = true
@@ -8,6 +8,5 @@ resource "aws_ecr_repository" "service" {
     scan_on_push = true
   }
 
-  tags = local.common_tags
+  tags = var.common_tags
 }
-

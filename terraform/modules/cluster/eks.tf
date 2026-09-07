@@ -1,25 +1,21 @@
 resource "aws_eks_cluster" "main" {
   name     = "${var.project_name}-eks"
-  role_arn = aws_iam_role.eks_cluster.arn
+  role_arn = var.cluster_role_arn
 
   vpc_config {
-    subnet_ids              = aws_subnet.private[*].id
+    subnet_ids              = var.private_subnet_ids
     endpoint_public_access  = true
     endpoint_private_access = true
   }
 
-  tags = local.common_tags
-
-  depends_on = [
-    aws_iam_role_policy_attachment.eks_cluster_policy
-  ]
+  tags = var.common_tags
 }
 
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${var.project_name}-nodes"
-  node_role_arn   = aws_iam_role.eks_node_group.arn
-  subnet_ids      = aws_subnet.private[*].id
+  node_role_arn   = var.node_role_arn
+  subnet_ids      = var.private_subnet_ids
   instance_types  = var.eks_node_instance_types
   capacity_type   = "ON_DEMAND"
   disk_size       = 20
@@ -34,14 +30,5 @@ resource "aws_eks_node_group" "main" {
     max_unavailable = 1
   }
 
-  tags = local.common_tags
-
-  depends_on = [
-    aws_eks_cluster.main,
-    aws_iam_role_policy_attachment.eks_worker_node_policy,
-    aws_iam_role_policy_attachment.eks_cni_policy,
-    aws_iam_role_policy_attachment.ecr_read_only,
-    aws_iam_role_policy.app_aws_access
-  ]
+  tags = var.common_tags
 }
-

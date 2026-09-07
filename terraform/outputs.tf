@@ -1,27 +1,25 @@
 output "eks_cluster_name" {
-  value = aws_eks_cluster.main.name
+  value = module.cluster.cluster_name
 }
 
 output "public_subnet_ids" {
-  value = aws_subnet.public[*].id
+  value = module.vpc.public_subnet_ids
 }
 
 output "private_subnet_ids" {
-  value = aws_subnet.private[*].id
+  value = module.vpc.private_subnet_ids
 }
 
 output "nat_gateway_public_ips" {
-  value = aws_eip.nat[*].public_ip
+  value = module.vpc.nat_gateway_public_ips
 }
 
 output "update_kubeconfig_command" {
-  value = "aws eks update-kubeconfig --region ${var.aws_region} --name ${aws_eks_cluster.main.name}"
+  value = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.cluster.cluster_name}"
 }
 
 output "ecr_repository_urls" {
-  value = {
-    for name, repo in aws_ecr_repository.service : name => repo.repository_url
-  }
+  value = module.cluster.ecr_repository_urls
 }
 
 output "rds_endpoints" {
