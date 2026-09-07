@@ -1,0 +1,27 @@
+name: Hadolint
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  hadolint:
+    name: Lint Dockerfiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Lint Dockerfiles
+        uses: hadolint/hadolint-action@v3.5.0
+        with:
+          dockerfile: '**/Dockerfile'
+          format: sarif
+          output-file: hadolint-report.json
+
+      - name: Upload Hadolint SARIF Report
+        uses: github/codeql-action/upload-sarif@v4.37.9
+        with:
+          sarif_file: hadolint-report.json

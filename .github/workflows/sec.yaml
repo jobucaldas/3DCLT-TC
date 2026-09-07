@@ -1,0 +1,70 @@
+name: Security Tests
+
+on:
+  push:
+    branches:
+      - main
+      - t2
+      - t3
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  gitleaks:
+    name: Check for Secrets with Gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  trivy:
+    name: Trivy Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Trivy Scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          format: sarif
+          output: trivy-report.json
+
+      - name: Save Trivy Report
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: trivy-report
+          path: trivy-report.json
+
+      - name: SARIF Upload
+        uses: github/codeql-action/upload-sarif@v4.37.9
+        with:
+          sarif_file: trivy-report.json
+
+  checkov:
+    name: Checkov Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Checkov GitHub Action
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4.37.9
+
+        if: always()
+        with:
+          sarif_file: results.sarif
