@@ -17,6 +17,11 @@ spec:
         - name: evaluation-service
           image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/evaluation-service:1.0.0
           imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsUser: 100
+            runAsGroup: 101
+            runAsNonRoot: true
           ports:
             - name: http
               containerPort: 8004
