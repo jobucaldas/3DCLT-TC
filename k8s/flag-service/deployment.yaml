@@ -16,6 +16,9 @@ spec:
         - name: flag-service
           image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/flag-service:1.0.0
           imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
           ports:
             - name: http
               containerPort: 8002
