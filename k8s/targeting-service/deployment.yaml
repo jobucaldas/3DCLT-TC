@@ -17,16 +17,10 @@ spec:
           image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/targeting-service:1.0.0
           imagePullPolicy: IfNotPresent
           securityContext:
-            allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsUser: 100
             runAsGroup: 101
             runAsNonRoot: true
-            capabilities:
-              drop:
-                - ALL
-            seccompProfile:
-              type: RuntimeDefault
           ports:
             - name: http
               containerPort: 8003
