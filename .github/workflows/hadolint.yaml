@@ -1,0 +1,24 @@
+name: Lint Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  hadolint:
+    name: Lint Dockerfiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Lint Dockerfiles
+        uses: hadolint/hadolint-action@v3.5.0
+        with:
+          dockerfile: '**/Dockerfile'
+          format: sarif
+          output-file: hadolint-report.json
+
+      - name: Upload Hadolint SARIF Report
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: hadolint-report
+          path: hadolint-report.json

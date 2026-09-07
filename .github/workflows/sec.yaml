@@ -22,8 +22,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-  sca:
-    name: Software Composition Analysis w/ Trivy
+  trivy:
+    name: Trivy Security Checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -45,3 +45,22 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4.37.9
         with:
           sarif_file: trivy-report.json
+
+  checkov:
+    name: Checkov Security Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Checkov GitHub Action
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v4.37.9
+
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif

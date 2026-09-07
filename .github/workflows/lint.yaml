@@ -23,10 +23,9 @@ jobs:
           output-file: kube-linter.sarif
 
       - name: Upload Kube Linter SARIF Report
-        uses: actions/upload-artifact@v7.0.1
+        uses: github/codeql-action/upload-sarif@v4.37.9
         with:
-          name: kube-linter-report
-          path: kube-linter.sarif
+          sarif-file: kube-linter.sarif
 
   tf-lint:
     name: Lint Terraform
@@ -50,10 +49,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Run TFLint
-        run: tflint -f sarif > tflint.sarif
+        run: tflint -f sarif | tee tflint.sarif
 
       - name: Upload TFLint SARIF Report
-        uses: actions/upload-artifact@v7.0.1
+        uses: github/codeql-action/upload-sarif@v4.37.9
         with:
-          name: tflint-report
-          path: tflint.sarif
+          sarif-file: tflint.sarif
