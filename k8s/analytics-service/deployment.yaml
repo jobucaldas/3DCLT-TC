@@ -19,6 +19,8 @@ spec:
           imagePullPolicy: IfNotPresent
           securityContext:
             readOnlyRootFilesystem: true
+            runAsUser: 100
+            runAsGroup: 101
             runAsNonRoot: true
           ports:
             - name: http
