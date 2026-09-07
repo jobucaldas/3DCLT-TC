@@ -8,6 +8,10 @@ on:
       - t3
   pull_request:
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   kube-lint:
     name: Lint Kubernetes
@@ -25,7 +29,7 @@ jobs:
       - name: Upload Kube Linter SARIF Report
         uses: github/codeql-action/upload-sarif@v4.37.9
         with:
-          sarif-file: kube-linter.sarif
+          sarif_file: kube-linter.sarif
 
   tf-lint:
     name: Lint Terraform
@@ -54,4 +58,4 @@ jobs:
       - name: Upload TFLint SARIF Report
         uses: github/codeql-action/upload-sarif@v4.37.9
         with:
-          sarif-file: tflint.sarif
+          sarif_file: tflint.sarif

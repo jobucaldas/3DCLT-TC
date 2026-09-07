@@ -8,6 +8,10 @@ on:
       - t3
   pull_request:
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   gitleaks:
     name: Check for Secrets with Gitleaks

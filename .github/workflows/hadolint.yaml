@@ -3,6 +3,10 @@ name: Lint Workflow
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   hadolint:
     name: Lint Dockerfiles

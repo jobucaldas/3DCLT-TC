@@ -11,11 +11,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-  - package-ecosystem: "terraform"
+  - package-ecosystem: "opentofu"
     directory: "/terraform"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "kubernetes"
-    directory: "/k8s"
     schedule:
       interval: "daily"
