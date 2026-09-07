@@ -53,7 +53,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Run TFLint
-        run: tflint -f sarif | tee tflint.sarif
+        run: |
+          set -o pipefail
+          tflint -f sarif | tee tflint.sarif
 
       - name: Upload TFLint SARIF Report
         uses: github/codeql-action/upload-sarif@v4.37.9
