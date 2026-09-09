@@ -5,14 +5,6 @@ locals {
     ManagedBy   = "terraform"
   }
 
-  services = [
-    "auth-service",
-    "flag-service",
-    "targeting-service",
-    "evaluation-service",
-    "analytics-service",
-  ]
-
   rds_databases = {
     auth = {
       identifier = "${var.project_name}-auth-db"
@@ -28,4 +20,3 @@ locals {
     }
   }
 }
-

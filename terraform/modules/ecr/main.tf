@@ -10,4 +10,3 @@ resource "aws_ecr_repository" "service" {
 
   tags = local.common_tags
 }
-
