@@ -1,0 +1,28 @@
+name: Hadolint
+description: Lint Dockerfiles with Hadolint and upload a SARIF report
+
+inputs:
+  dockerfile:
+    description: Dockerfile glob or path to lint
+    required: false
+    default: '**/Dockerfile'
+  report-file:
+    description: SARIF report path
+    required: false
+    default: hadolint-report.json
+
+runs:
+  using: composite
+  steps:
+    - name: Lint Dockerfiles
+      uses: hadolint/hadolint-action@v3.5.0
+      with:
+        dockerfile: ${{ inputs.dockerfile }}
+        format: sarif
+        output-file: ${{ inputs.report-file }}
+
+    - name: Upload Hadolint SARIF Report
+      if: always()
+      uses: github/codeql-action/upload-sarif@v4.37.9
+      with:
+        sarif_file: ${{ inputs.report-file }}

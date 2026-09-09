@@ -1,0 +1,38 @@
+name: Flake8 Lint
+description: Run Flake8 against a Python directory
+
+inputs:
+  python-version:
+    description: Python version to install
+    required: false
+    default: '3.x'
+  working-directory:
+    description: Directory containing the Python code to lint
+    required: false
+    default: '.'
+  flake8-version:
+    description: Flake8 package version, or latest when omitted
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install Flake8
+      shell: bash
+      run: |
+        if [[ -n "${{ inputs.flake8-version }}" ]]; then
+          python -m pip install "flake8==${{ inputs.flake8-version }}"
+        else
+          python -m pip install flake8
+        fi
+
+    - name: Run Flake8
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: flake8 .
