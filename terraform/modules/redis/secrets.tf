@@ -1,3 +1,4 @@
+# checkov:skip=CKV2_AWS_57:Redis endpoint is non-sensitive configuration, not a credential requiring rotation.
 resource "aws_secretsmanager_secret" "redis_url" {
   name = "${var.project_name}/redis-url"
 }

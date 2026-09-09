@@ -24,7 +24,7 @@ O desenho atual usa uma topologia mais proxima de boas praticas na AWS:
 - Endpoint do EKS: acesso publico para seu `kubectl` local e acesso privado para comunicacao dentro da VPC.
 - O Terraform cria as IAM Roles usadas pelo EKS e pelo node group
 - Os Pods usam a IAM Role dos nodes do EKS para acessar SQS e DynamoDB neste ambiente de demo
-  
+
 Fluxo de saida dos Pods:
 
 ```text
