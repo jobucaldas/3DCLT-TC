@@ -1,21 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: analytics-service
+  name: auth-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: analytics-service
+      app: auth-service
   template:
     metadata:
       labels:
-        app: analytics-service
+        app: auth-service
     spec:
-      serviceAccountName: analytics-service
       containers:
-        - name: analytics-service
-          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/analytics-service:1.0.0
+        - name: auth-service
+          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/auth-service:1.0.0
           imagePullPolicy: IfNotPresent
           securityContext:
             readOnlyRootFilesystem: true
@@ -24,17 +23,17 @@ spec:
             runAsNonRoot: true
           ports:
             - name: http
-              containerPort: 8005
+              containerPort: 8001
           envFrom:
             - configMapRef:
-                name: analytics-service-config
+                name: auth-service-config
             - secretRef:
-                name: analytics-service-secret
+                name: auth-service-secret
           readinessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
@@ -44,9 +43,8 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: 150m
+              cpu: 100m
               memory: 128Mi
             limits:
-              cpu: 750m
+              cpu: 500m
               memory: 256Mi
-

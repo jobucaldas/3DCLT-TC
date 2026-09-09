@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth-service
+  name: flag-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: auth-service
+      app: flag-service
   template:
     metadata:
       labels:
-        app: auth-service
+        app: flag-service
     spec:
       containers:
-        - name: auth-service
-          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/auth-service:1.0.0
+        - name: flag-service
+          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/flag-service:1.0.0
           imagePullPolicy: IfNotPresent
           securityContext:
             readOnlyRootFilesystem: true
@@ -23,17 +23,17 @@ spec:
             runAsNonRoot: true
           ports:
             - name: http
-              containerPort: 8001
+              containerPort: 8002
           envFrom:
             - configMapRef:
-                name: auth-service-config
+                name: flag-service-config
             - secretRef:
-                name: auth-service-secret
+                name: flag-service-secret
           readinessProbe:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
             httpGet:
@@ -48,4 +48,3 @@ spec:
             limits:
               cpu: 500m
               memory: 256Mi
-

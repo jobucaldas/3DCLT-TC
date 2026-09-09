@@ -1,20 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: flag-service
+  name: analytics-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: flag-service
+      app: analytics-service
   template:
     metadata:
       labels:
-        app: flag-service
+        app: analytics-service
     spec:
+      serviceAccountName: analytics-service
       containers:
-        - name: flag-service
-          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/flag-service:1.0.0
+        - name: analytics-service
+          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/analytics-service:1.0.0
           imagePullPolicy: IfNotPresent
           securityContext:
             readOnlyRootFilesystem: true
@@ -23,12 +24,12 @@ spec:
             runAsNonRoot: true
           ports:
             - name: http
-              containerPort: 8002
+              containerPort: 8005
           envFrom:
             - configMapRef:
-                name: flag-service-config
+                name: analytics-service-config
             - secretRef:
-                name: flag-service-secret
+                name: analytics-service-secret
           readinessProbe:
             httpGet:
               path: /health
@@ -43,9 +44,8 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: 100m
+              cpu: 150m
               memory: 128Mi
             limits:
-              cpu: 500m
+              cpu: 750m
               memory: 256Mi
-

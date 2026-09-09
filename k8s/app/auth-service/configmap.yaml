@@ -4,4 +4,3 @@ metadata:
   name: auth-service-config
 data:
   PORT: "8001"
-
