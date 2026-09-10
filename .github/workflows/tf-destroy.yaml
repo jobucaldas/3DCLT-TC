@@ -2,6 +2,15 @@ name: Terraform Destroy
 
 on:
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "The environment to deploy to"
+        required: false
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
 
 permissions:
   contents: read
@@ -10,7 +19,7 @@ jobs:
   terraform-destroy:
     name: Terraform Destroy
     runs-on: ubuntu-latest
-    environment: prod
+    environment: ${{ inputs.environment }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -26,9 +35,12 @@ jobs:
         uses: hashicorp/setup-terraform@v4
 
       - name: Terraform Init
-        working-directory: terraform
+        working-directory: terraform/deployments/togglemaster
         run: terraform init
 
       - name: Terraform Destroy
-        working-directory: terraform
-        run: terraform destroy -auto-approve
+        shell: bash
+        env:
+          TF_VAR_db_password: ${{ secrets.db_password }}
+        working-directory: terraform/deployments/togglemaster
+        run: terraform destroy -var-file=terraform/deployments/togglemaster/${{ inputs.environment }}.tfvars -auto-approve

@@ -6,7 +6,6 @@ terraform.tfvars
 .terraform.tfstate.lock.info
 *.log
 *.pid
-*.tfvars
 
 .env
 .env.*

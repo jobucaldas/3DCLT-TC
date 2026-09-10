@@ -4,6 +4,12 @@ on:
   pull_request:
 
   workflow_call:
+    inputs:
+      environment:
+        description: "Terraform environment to deploy to: dev or prod"
+        required: false
+        default: "dev"
+        type: string
 
 permissions:
   contents: read
@@ -28,20 +34,23 @@ jobs:
         uses: hashicorp/setup-terraform@v4
 
       - name: Terraform Format
-        working-directory: terraform
+        working-directory: terraform/deployments/togglemaster
         run: terraform fmt -check
 
       - name: Terraform Init
-        working-directory: terraform
+        working-directory: terraform/deployments/togglemaster
         run: terraform init
 
       - name: Terraform Validate
-        working-directory: terraform
+        working-directory: terraform/deployments/togglemaster
         run: terraform validate
 
       - name: Terraform Plan
-        working-directory: terraform
-        run: terraform plan -out=tfplan
+        shell: bash
+        env:
+          TF_VAR_db_password: ${{ secrets.db_password }}
+        working-directory: terraform/deployments/togglemaster
+        run: terraform plan -var-file=terraform/deployments/togglemaster/${{ inputs.environment || 'dev' }}.tfvars -out=tfplan
 
       - name: Save Terraform Plan
         uses: actions/upload-artifact@v7
