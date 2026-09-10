@@ -1,6 +1,6 @@
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project_name}-rds-subnets"
-  subnet_ids = aws_subnet.private[*].id
+  subnet_ids = var.private_subnet_ids
 
   tags = merge(local.common_tags, {
     Name = "${var.project_name}-rds-subnets"
@@ -8,7 +8,7 @@ resource "aws_db_subnet_group" "main" {
 }
 
 resource "aws_db_instance" "postgres" {
-  for_each = local.rds_databases
+  for_each = var.databases
 
   identifier              = each.value.identifier
   engine                  = "postgres"
@@ -19,7 +19,7 @@ resource "aws_db_instance" "postgres" {
   username                = var.db_username
   password                = var.db_password
   db_subnet_group_name    = aws_db_subnet_group.main.name
-  vpc_security_group_ids  = [aws_security_group.data.id]
+  vpc_security_group_ids  = [var.data_security_group_id]
   publicly_accessible     = false
   multi_az                = false
   storage_encrypted       = true

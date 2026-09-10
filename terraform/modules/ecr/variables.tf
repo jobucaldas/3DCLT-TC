@@ -1,0 +1,6 @@
+variable "project_name" { type = string }
+variable "environment" { type = string }
+variable "apps" {
+  description = "Applications for which ECR repositories are created."
+  type        = set(string)
+}

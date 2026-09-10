@@ -1,15 +1,7 @@
 locals {
   common_tags = {
     Project     = var.project_name
-    Environment = "demo"
+    Environment = var.environment
     ManagedBy   = "terraform"
   }
-
-  services = [
-    "auth-service",
-    "flag-service",
-    "targeting-service",
-    "evaluation-service",
-    "analytics-service",
-  ]
 }

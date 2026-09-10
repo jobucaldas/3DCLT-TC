@@ -1,9 +1,34 @@
-output "kubernetes_secret_values" {
-  description = "Values to add unto aws secret manager."
-  sensitive   = true
+output "app_secret_arns" {
   value = {
-    auth_database_url      = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres["auth"].address}:5432/auth_db"
-    flag_database_url      = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres["flag"].address}:5432/flags_db"
-    targeting_database_url = "postgres://${var.db_username}:${var.db_password}@${aws_db_instance.postgres["targeting"].address}:5432/targeting_db"
+    for name, secret in aws_secretsmanager_secret.app : name => secret.arn
+  }
+}
+
+output "ecr_repository_urls" {
+  value = module.ecr.ecr_repository_urls
+}
+
+output "rds_endpoints" {
+  value = module.rds.rds_endpoints
+}
+
+output "redis_endpoint" {
+  value = module.redis.redis_endpoint
+}
+
+output "sqs_queue_url" {
+  value = module.sqs.sqs_queue_url
+}
+
+output "dynamodb_table_name" {
+  value = module.dynamodb.dynamodb_table_name
+}
+
+output "kubernetes_secret_values" {
+  description = "Database URLs to populate in the corresponding application Secrets Manager secrets."
+  sensitive   = true
+
+  value = {
+    for name, database in local.databases : "${name}_database_url" => "postgres://${var.db_username}:${var.db_password}@${module.rds.rds_endpoints[name]}:5432/${database.db_name}"
   }
 }

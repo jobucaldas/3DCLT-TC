@@ -1,28 +1,18 @@
-variable "db_username" {
-  description = "PostgreSQL username for the three RDS instances."
-  type        = string
-  default     = "togglemaster"
+variable "project_name" { type = string }
+variable "environment" { type = string }
+variable "private_subnet_ids" { type = list(string) }
+variable "data_security_group_id" { type = string }
+variable "databases" {
+  description = "Databases required by applications in this environment."
+  type = map(object({
+    identifier = string
+    db_name    = string
+  }))
 }
-
+variable "db_username" { type = string }
 variable "db_password" {
-  description = "PostgreSQL password for the three RDS instances."
-  type        = string
-  sensitive   = true
-
-  validation {
-    condition     = length(var.db_password) >= 8
-    error_message = "db_password must have at least 8 characters for Amazon RDS."
-  }
+  type      = string
+  sensitive = true
 }
-
-variable "rds_instance_class" {
-  description = "RDS instance class for the demo databases."
-  type        = string
-  default     = "db.t4g.micro"
-}
-
-variable "rds_allocated_storage_gb" {
-  description = "Allocated storage per RDS instance."
-  type        = number
-  default     = 20
-}
+variable "rds_instance_class" { type = string }
+variable "rds_allocated_storage_gb" { type = number }

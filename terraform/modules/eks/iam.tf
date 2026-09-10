@@ -22,8 +22,8 @@ resource "aws_iam_role_policy" "app_aws_access" {
           "dynamodb:Scan"
         ]
         Resource = [
-          aws_sqs_queue.events.arn,
-          aws_dynamodb_table.analytics.arn
+          var.sqs_queue_arn,
+          var.dynamodb_table_arn
         ]
       }
     ]
@@ -46,10 +46,7 @@ resource "aws_iam_role" "app_pods" {
           "${local.eks_oidc_provider}:aud" = "sts.amazonaws.com"
         }
         StringLike = {
-          "${local.eks_oidc_provider}:sub" = [
-            "system:serviceaccount:togglemaster-evaluation:evaluation-service",
-            "system:serviceaccount:togglemaster-analytics:analytics-service"
-          ]
+          "${local.eks_oidc_provider}:sub" = tolist(var.app_service_accounts)
         }
       }
     }]
@@ -133,7 +130,7 @@ resource "aws_iam_role_policy" "keda_sqs" {
         "sqs:GetQueueAttributes",
         "sqs:GetQueueUrl"
       ]
-      Resource = aws_sqs_queue.events.arn
+      Resource = var.sqs_queue_arn
     }]
   })
 }

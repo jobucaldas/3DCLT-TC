@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "service" {
-  for_each = toset(local.services)
+  for_each = var.apps
 
   name         = each.value
   force_delete = true

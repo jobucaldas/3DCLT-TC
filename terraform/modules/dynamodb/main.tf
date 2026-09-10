@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "analytics" {
-  name         = "ToggleMasterAnalytics"
+  name         = var.table_name
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "event_id"
 

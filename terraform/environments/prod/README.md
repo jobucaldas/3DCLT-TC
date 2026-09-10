@@ -20,7 +20,7 @@ O desenho atual usa uma topologia mais proxima de boas praticas na AWS:
 - NAT Gateway: permite que recursos privados acessem internet e servicos AWS, como ECR, SQS e DynamoDB.
 - Internet Gateway: permite a entrada/saida das subnets publicas.
 - RDS e Redis: continuam sem acesso publico.
-- Security group de dados: permite PostgreSQL e Redis somente a partir do security group do EKS.
+- Security group de dados: permite PostgreSQL e Redis somente a partir das subnets privadas.
 - Endpoint do EKS: acesso publico para seu `kubectl` local e acesso privado para comunicacao dentro da VPC.
 - O Terraform cria as IAM Roles usadas pelo EKS e pelo node group
 - Os Pods usam a IAM Role dos nodes do EKS para acessar SQS e DynamoDB neste ambiente de demo
@@ -56,20 +56,20 @@ Dentro desta pasta:
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-Edite `terraform.tfvars` e configure pelo menos:
+Edite `terraform.tfvars` para definir a infraestrutura e a lista de `apps`. A lista é a fonte única para os repositórios ECR e os containers de Secrets Manager; bancos RDS só são criados para apps com `database_name`.
 
-```hcl
-db_password = "senha-forte123"
+```bash
+export TF_VAR_db_password='<placeholder>'
 ```
 
 ## 3. Criar infraestrutura
 
 ```bash
-terraform init
-terraform fmt
-terraform validate
-terraform plan
-terraform apply
+tofu init
+tofu fmt
+tofu validate
+tofu plan
+tofu apply
 ```
 
 ## 4. Configurar kubectl
@@ -77,7 +77,7 @@ terraform apply
 Use o output:
 
 ```bash
-terraform output update_kubeconfig_command
+tofu output update_kubeconfig_command
 ```
 
 Depois execute o comando `aws eks update-kubeconfig ...` impresso no terminal.
@@ -87,7 +87,7 @@ Depois execute o comando `aws eks update-kubeconfig ...` impresso no terminal.
 Use:
 
 ```bash
-terraform output ecr_repository_urls
+tofu output ecr_repository_urls
 ```
 
 Faca o build, tag e push da imagem de cada servico para seu respectivo repositorio ECR.
@@ -104,7 +104,7 @@ docker build -t $(terraform output -raw ecr_repository_urls | jq -r '.auth_servi
 Use este output para pegar os valores reais dos Secrets:
 
 ```bash
-terraform output -json kubernetes_secret_values_to_encode
+tofu output -json kubernetes_secret_values
 ```
 
 Converta cada valor para Base64 e substitua os placeholders em:
