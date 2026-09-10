@@ -1,0 +1,47 @@
+name: Terraform Destroy
+
+on:
+  # checkov:skip=CKV_GHA_7:Constrained dev/prod input selects the protected GitHub environment and matching Terraform tfvars file.
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "The environment to deploy to"
+        required: false
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
+
+permissions:
+  contents: read
+
+jobs:
+  terraform-destroy:
+    name: Terraform Destroy
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform Init
+        working-directory: terraform/deployments/togglemaster
+        run: terraform init
+
+      - name: Terraform Destroy
+        shell: bash
+        env:
+          TF_VAR_db_password: ${{ secrets.db_password }}
+        working-directory: terraform/deployments/togglemaster
+        run: terraform destroy -var-file=${{ inputs.environment }}.tfvars -auto-approve

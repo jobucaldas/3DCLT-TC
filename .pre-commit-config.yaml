@@ -7,6 +7,7 @@ repos:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
     -   id: check-yaml
+        args: [--allow-multiple-documents]
     -   id: check-added-large-files
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1
@@ -16,12 +17,14 @@ repos:
     rev: v1.7.12
     hooks:
       - id: actionlint
-  - repo: https://github.com/stackrox/kube-linter
-    rev: v0.8.3
-    hooks:
-      - id: kube-linter
   - repo: local
     hooks:
+      - id: kube-linter
+        name: KubeLinter (compiled kustomize)
+        entry: bash -c 'kubectl kustomize k8s | kube-linter lint -'
+        language: system
+        pass_filenames: false
+        files: ^k8s/.*\.ya?ml$
       - id: tflint
         name: tflint
         entry: tflint --recursive

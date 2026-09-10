@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: targeting-service
+  annotations:
+    checkov.io/skip1: >-
+      CKV_K8S_35=The application currently reads its secrets from environment variables; file-based secret consumption is not supported.
+    checkov.io/skip2: >-
+      CKV_K8S_43=The release contract uses the existing numeric image tag; digest pinning is intentionally out of scope.
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: targeting-service
+  template:
+    metadata:
+      labels:
+        app: targeting-service
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: targeting-service
+          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/targeting-service:1.0.0
+          imagePullPolicy: Always
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsUser: 10000
+            runAsGroup: 10000
+            runAsNonRoot: true
+          ports:
+            - name: http
+              containerPort: 8003
+          envFrom:
+            - configMapRef:
+                name: targeting-service-config
+            - secretRef:
+                name: targeting-service-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

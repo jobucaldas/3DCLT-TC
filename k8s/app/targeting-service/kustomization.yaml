@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: togglemaster-targeting
+
+resources:
+  - configmap.yaml
+  - external-secret.yaml
+  - service.yaml
+  - deployment.yaml
+  - ingress.yaml
+  - networkpolicy.yaml
