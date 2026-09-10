@@ -24,6 +24,10 @@ output "dynamodb_table_name" {
   value = module.dynamodb.dynamodb_table_name
 }
 
+output "app_pods_role_arn" {
+  value = module.eks.app_pods_role_arn
+}
+
 output "kubernetes_secret_values" {
   description = "Database URLs to populate in the corresponding application Secrets Manager secrets."
   sensitive   = true

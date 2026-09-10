@@ -11,3 +11,4 @@ resources:
   - deployment.yaml
   - scaled-object.yaml
   - ingress.yaml
+  - networkpolicy.yaml
