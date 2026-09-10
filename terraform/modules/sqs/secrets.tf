@@ -1,6 +1,7 @@
-# checkov:skip=CKV2_AWS_57:SQS endpoint is non-sensitive configuration, not a credential requiring rotation.
 resource "aws_secretsmanager_secret" "sqs_url" {
-  name = "${var.project_name}/sqs-url"
+  #checkov:skip=CKV2_AWS_57:SQS endpoint is non-sensitive configuration, not a credential requiring rotation.
+  name       = "${var.project_name}/sqs-url"
+  kms_key_id = var.kms_key_arn
 }
 
 resource "aws_secretsmanager_secret_version" "sqs_url" {

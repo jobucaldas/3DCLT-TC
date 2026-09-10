@@ -3,6 +3,7 @@ data "aws_availability_zones" "available" {
 }
 
 resource "aws_vpc" "main" {
+  #checkov:skip=CKV2_AWS_11:Demo environment; VPC Flow Logs incur additional CloudWatch cost.
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
@@ -116,6 +117,7 @@ resource "aws_route_table_association" "private" {
 }
 
 resource "aws_security_group" "data" {
+  #checkov:skip=CKV2_AWS_5:Attached to RDS and ElastiCache through module input data_security_group_id.
   name        = "${var.project_name}-data-sg"
   description = "Allows EKS nodes to reach RDS and Redis."
   vpc_id      = aws_vpc.main.id

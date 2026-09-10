@@ -16,3 +16,6 @@ variable "db_password" {
 }
 variable "rds_instance_class" { type = string }
 variable "rds_allocated_storage_gb" { type = number }
+variable "kms_key_arn" {
+  type = string
+}

@@ -69,6 +69,7 @@ module "rds" {
   db_password              = var.db_password
   rds_instance_class       = var.rds_instance_class
   rds_allocated_storage_gb = var.rds_allocated_storage_gb
+  kms_key_arn              = module.kms.kms_key_arn
 }
 
 module "redis" {

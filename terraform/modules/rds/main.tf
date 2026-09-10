@@ -8,6 +8,9 @@ resource "aws_db_subnet_group" "main" {
 }
 
 resource "aws_db_instance" "postgres" {
+  #checkov:skip=CKV_AWS_157:Demo environment; Multi-AZ is intentionally omitted to control cost.
+  #checkov:skip=CKV_AWS_293:Demo environment; deletion protection would block routine teardown.
+  #checkov:skip=CKV2_AWS_69:Demo clients are not configured to require PostgreSQL TLS.
   for_each = var.databases
 
   identifier              = each.value.identifier
@@ -26,6 +29,9 @@ resource "aws_db_instance" "postgres" {
   backup_retention_period = 7
   deletion_protection     = false
 
+  performance_insights_kms_key_id = var.kms_key_arn
+  parameter_group_name            = aws_db_parameter_group.postgres.name
+
   enabled_cloudwatch_logs_exports     = ["postgresql", "upgrade"]
   iam_database_authentication_enabled = true
   performance_insights_enabled        = true
@@ -41,4 +47,17 @@ resource "aws_db_instance" "postgres" {
   tags = merge(local.common_tags, {
     Name = each.value.identifier
   })
+}
+
+resource "aws_db_parameter_group" "postgres" {
+  name   = "${var.project_name}-postgres16"
+  family = "postgres16"
+
+  parameter {
+    name         = "log_statement"
+    value        = "all"
+    apply_method = "pending-reboot"
+  }
+
+  tags = local.common_tags
 }
