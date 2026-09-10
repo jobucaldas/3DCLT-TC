@@ -16,5 +16,8 @@ resource "aws_elasticache_cluster" "redis" {
   subnet_group_name    = aws_elasticache_subnet_group.main.name
   security_group_ids   = [var.data_security_group_id]
 
+  snapshot_retention_limit = 7
+  snapshot_window          = "03:00-04:00"
+
   tags = local.common_tags
 }

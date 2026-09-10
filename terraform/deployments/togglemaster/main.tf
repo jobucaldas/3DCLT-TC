@@ -8,11 +8,18 @@ module "vpc" {
   private_subnet_cidrs = var.private_subnet_cidrs
 }
 
+module "kms" {
+  source = "../../modules/kms"
+
+  project_name = var.project_name
+}
+
 module "sqs" {
   source = "../../modules/sqs"
 
   project_name = var.project_name
   environment  = var.environment
+  kms_key_arn  = module.kms.kms_key_arn
 }
 
 module "dynamodb" {
@@ -21,6 +28,7 @@ module "dynamodb" {
   project_name = var.project_name
   environment  = var.environment
   table_name   = var.dynamodb_table_name
+  kms_key_arn  = module.kms.kms_key_arn
 }
 
 module "ecr" {
@@ -29,6 +37,7 @@ module "ecr" {
   project_name = var.project_name
   environment  = var.environment
   apps         = toset(keys(var.apps))
+  kms_key_arn  = module.kms.kms_key_arn
 }
 
 module "eks" {
@@ -37,6 +46,7 @@ module "eks" {
   project_name            = var.project_name
   environment             = var.environment
   aws_region              = var.aws_region
+  kms_key_arn             = module.kms.kms_key_arn
   private_subnet_ids      = module.vpc.private_subnet_ids
   sqs_queue_arn           = module.sqs.queue_arn
   dynamodb_table_arn      = module.dynamodb.table_arn
@@ -69,4 +79,5 @@ module "redis" {
   private_subnet_ids     = module.vpc.private_subnet_ids
   data_security_group_id = module.vpc.data_security_group_id
   redis_node_type        = var.redis_node_type
+  kms_key_arn            = module.kms.kms_key_arn
 }
