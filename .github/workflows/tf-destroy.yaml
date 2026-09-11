@@ -37,7 +37,10 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform/deployments/togglemaster
-        run: terraform init
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: terraform init -input=false -backend-config="key=togglemaster/${{ inputs.environment }}/terraform.tfstate" -backend-config="access_key=$R2_ACCESS_KEY_ID" -backend-config="secret_key=$R2_SECRET_ACCESS_KEY"
 
       - name: Terraform Destroy
         shell: bash

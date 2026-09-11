@@ -2,6 +2,10 @@ name: Terraform Plan
 
 on:
   pull_request:
+    paths:
+      - 'terraform/deployments/togglemaster/**'
+      - 'terraform/modules/**'
+      - '.github/workflows/tf-plan.yaml'
 
   workflow_call:
     inputs:
@@ -10,6 +14,10 @@ on:
         required: false
         default: "dev"
         type: string
+    outputs:
+      has_changes:
+        description: "Indicates if the Terraform plan has changes"
+        value: ${{ jobs.terraform-plan.outputs.has_changes }}
 
 permissions:
   contents: read
@@ -19,6 +27,8 @@ jobs:
   terraform-plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.plan.outputs.has_changes }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -39,21 +49,44 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform/deployments/togglemaster
-        run: terraform init
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: terraform init -input=false -backend-config="key=togglemaster/${{ inputs.environment || 'dev' }}/terraform.tfstate" -backend-config="access_key=$R2_ACCESS_KEY_ID" -backend-config="secret_key=$R2_SECRET_ACCESS_KEY"
 
       - name: Terraform Validate
         working-directory: terraform/deployments/togglemaster
         run: terraform validate
 
       - name: Terraform Plan
+        id: plan
         shell: bash
         env:
-          TF_VAR_db_password: ${{ secrets.db_password }}
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
         working-directory: terraform/deployments/togglemaster
-        run: terraform plan -var-file=${{ inputs.environment || 'dev' }}.tfvars -out=tfplan
+        run: |
+          # Captures the exit code from the plan command
+          set +e
+          terraform plan -var-file=${{ inputs.environment || 'dev' }}.tfvars -detailed-exitcode -out=tfplan
+          code=$?
+          set -e
+
+          if [ $code -eq 1 ]; then
+            echo "Error: Terraform plan failed"
+            exit 1
+          elif [ $code -eq 2 ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Error: Terraform plan has changes"
+            exit 2
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No changes in Terraform plan"
+            exit 0
+          fi
 
       - name: Save Terraform Plan
+        if: steps.plan.outputs.has_changes == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: terraform-plan
-          path: tfplan
+          path: terraform/deployments/togglemaster/tfplan
