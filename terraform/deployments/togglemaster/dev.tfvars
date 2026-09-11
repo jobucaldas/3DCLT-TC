@@ -1,5 +1,5 @@
 aws_region   = "us-east-1"
-project_name = "togglemaster-dev"
+project_name = "togglemaster"
 environment  = "dev"
 
 apps = {
@@ -17,8 +17,8 @@ apps = {
 }
 
 app_service_accounts = [
-  "system:serviceaccount:togglemaster-evaluation:evaluation-service",
-  "system:serviceaccount:togglemaster-analytics:analytics-service",
+  "system:serviceaccount:togglemaster-evaluation-dev:evaluation-service",
+  "system:serviceaccount:togglemaster-analytics-dev:analytics-service",
 ]
 
 vpc_cidr             = "10.43.0.0/16"
