@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
-    bucket                      = "togglemaster-tfstate"
-    region                      = "auto"
+    bucket = "togglemaster-tfstate"
+    region = "auto"
 
     # Encrypt can be off as cloudflare keeps encryption on always
     encrypt                     = false
