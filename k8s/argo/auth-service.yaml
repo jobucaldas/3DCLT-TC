@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: auth-service
+  namespace: argocd-prod
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jobucaldas/3DCLT-TC.git
+    targetRevision: main
+    path: k8s/app/auth-service
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: togglemaster-auth
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
