@@ -21,3 +21,11 @@ variable "chart_version" {
   type    = string
   default = "10.9.0"
 }
+variable "external_secrets_role_arn" {
+  type    = string
+  default = "arn:aws:iam::762846202773:role/togglemaster-prod-external-secrets-role"
+}
+variable "keda_operator_role_arn" {
+  type    = string
+  default = "arn:aws:iam::762846202773:role/togglemaster-prod-keda-operator-role"
+}

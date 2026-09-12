@@ -40,3 +40,37 @@ resource "kubernetes_manifest" "app" {
   }
   depends_on = [helm_release.argocd]
 }
+
+resource "kubernetes_manifest" "requirements" {
+  for_each = local.required_operators
+  manifest = {
+    apiVersion = "argoproj.io/v1alpha1"
+    kind       = "Application"
+    metadata = {
+      name      = each.key
+      namespace = "argocd-${var.environment}"
+    }
+    spec = {
+      project = "default"
+      source = {
+        repoURL        = each.value.repoURL
+        chart          = each.value.chart
+        targetRevision = each.value.revision
+        helm = each.key == "external-secrets" ? {
+          parameters = [{ name = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn", value = var.external_secrets_role_arn }]
+        } : each.key == "keda" ? {
+          parameters = [{ name = "serviceAccount.operator.annotations.eks\\.amazonaws\\.com/role-arn", value = var.keda_operator_role_arn }]
+        } : {}
+      }
+      destination = {
+        server    = "https://kubernetes.default.svc"
+        namespace = each.value.namespace
+      }
+      syncPolicy = {
+        automated   = { prune = true, selfHeal = true }
+        syncOptions = ["CreateNamespace=true"]
+      }
+    }
+  }
+  depends_on = [helm_release.argocd]
+}

@@ -78,7 +78,9 @@ module "redis" {
 module "argo" {
   source = "../../modules/argo"
 
-  environment = var.environment
+  environment               = var.environment
+  external_secrets_role_arn = module.eks.external_secrets_role_arn
+  keda_operator_role_arn    = module.eks.keda_operator_role_arn
 
   depends_on = [module.eks]
 }
