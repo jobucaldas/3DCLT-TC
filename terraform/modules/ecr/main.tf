@@ -1,7 +1,7 @@
 resource "aws_ecr_repository" "service" {
   for_each = var.apps
 
-  name         = each.value
+  name         = "${var.project_name}-${var.environment}-${each.value}"
   force_delete = true
 
   image_scanning_configuration {

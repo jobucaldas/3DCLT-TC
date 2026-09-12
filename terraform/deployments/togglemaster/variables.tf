@@ -40,6 +40,11 @@ variable "private_subnet_cidrs" {
 
 variable "db_username" {
   type = string
+
+  validation {
+    condition     = can(regex("^[a-zA-Z][a-zA-Z0-9_]+$", var.db_username))
+    error_message = "db_username: letters, numbers, underscore only, start with letter (RDS rule, no hyphens)."
+  }
 }
 
 variable "db_password" {

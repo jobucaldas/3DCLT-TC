@@ -7,7 +7,7 @@ locals {
 
   databases = {
     for name, app in var.apps : name => {
-      identifier = "${var.project_name}-${name}-db"
+      identifier = "${var.project_name}-${var.environment}-${name}-db"
       db_name    = app.database_name
     }
     if app.database_name != null

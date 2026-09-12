@@ -1,12 +1,12 @@
 resource "aws_elasticache_subnet_group" "main" {
-  name       = "${var.project_name}-redis-subnets"
+  name       = "${var.project_name}-${var.environment}-redis-subnets"
   subnet_ids = var.private_subnet_ids
 
   tags = local.common_tags
 }
 
 resource "aws_elasticache_cluster" "redis" {
-  cluster_id           = "${var.project_name}-redis"
+  cluster_id           = "${var.project_name}-${var.environment}-redis"
   engine               = "redis"
   engine_version       = "7.0"
   node_type            = var.redis_node_type
