@@ -24,6 +24,18 @@ output "app_pods_role_arn" {
   value = module.eks.app_pods_role_arn
 }
 
+output "eks_cluster_name" {
+  value = module.eks.eks_cluster_name
+}
+
+output "external_secrets_role_arn" {
+  value = module.eks.external_secrets_role_arn
+}
+
+output "keda_operator_role_arn" {
+  value = module.eks.keda_operator_role_arn
+}
+
 output "rds_master_secret_arns" {
   description = "RDS-managed master user secrets (auto-rotated by AWS)."
   value       = module.rds.master_secret_arns

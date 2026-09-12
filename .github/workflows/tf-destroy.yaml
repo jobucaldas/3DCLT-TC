@@ -17,8 +17,8 @@ permissions:
   contents: read
 
 jobs:
-  terraform-destroy:
-    name: Terraform Destroy ${{ inputs.environment }}
+  destroy-app:
+    name: Terraform Destroy App (${{ inputs.environment }})
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
@@ -36,13 +36,43 @@ jobs:
         uses: hashicorp/setup-terraform@v4
 
       - name: Terraform Init
-        working-directory: terraform/deployments/togglemaster
+        working-directory: terraform/deployments/togglemaster-app
         env:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        run: terraform init -input=false -backend-config="key=togglemaster/${{ inputs.environment }}/terraform.tfstate" -backend-config="access_key=$R2_ACCESS_KEY_ID" -backend-config="secret_key=$R2_SECRET_ACCESS_KEY"
+        run: terraform init -input=false -backend-config="key=togglemaster/app/${{ inputs.environment }}/terraform.tfstate" -backend-config="access_key=$R2_ACCESS_KEY_ID" -backend-config="secret_key=$R2_SECRET_ACCESS_KEY"
 
       - name: Terraform Destroy
         shell: bash
-        working-directory: terraform/deployments/togglemaster
+        working-directory: terraform/deployments/togglemaster-app
+        run: terraform destroy -var-file=${{ inputs.environment }}.tfvars -auto-approve
+
+  destroy-infra:
+    name: Terraform Destroy Infra (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Terraform Init
+        working-directory: terraform/deployments/togglemaster-infra
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: terraform init -input=false -backend-config="key=togglemaster/infra/${{ inputs.environment }}/terraform.tfstate" -backend-config="access_key=$R2_ACCESS_KEY_ID" -backend-config="secret_key=$R2_SECRET_ACCESS_KEY"
+
+      - name: Terraform Destroy
+        shell: bash
+        working-directory: terraform/deployments/togglemaster-infra
         run: terraform destroy -var-file=${{ inputs.environment }}.tfvars -auto-approve

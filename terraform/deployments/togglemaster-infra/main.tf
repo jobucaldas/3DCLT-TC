@@ -72,13 +72,3 @@ module "redis" {
   data_security_group_id = module.vpc.data_security_group_id
   redis_node_type        = var.redis_node_type
 }
-
-module "argo" {
-  source = "../../modules/argo"
-
-  environment               = var.environment
-  external_secrets_role_arn = module.eks.external_secrets_role_arn
-  keda_operator_role_arn    = module.eks.keda_operator_role_arn
-
-  depends_on = [module.eks]
-}

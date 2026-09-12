@@ -33,16 +33,16 @@ jobs:
       - uses: hashicorp/setup-terraform@v4
 
       - name: Init prod
-        working-directory: terraform/deployments/togglemaster
+        working-directory: terraform/deployments/togglemaster-infra
         env:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: |
-          terraform init -input=false -backend-config='key=togglemaster/prod/terraform.tfstate' -backend-config='access_key=$R2_ACCESS_KEY_ID' -backend-config='secret_key=$R2_SECRET_ACCESS_KEY'
+          terraform init -input=false -backend-config='key=togglemaster/infra/prod/terraform.tfstate' -backend-config='access_key=$R2_ACCESS_KEY_ID' -backend-config='secret_key=$R2_SECRET_ACCESS_KEY'
 
       - name: Sync URLs
         shell: bash
-        working-directory: terraform/deployments/togglemaster
+        working-directory: terraform/deployments/togglemaster-infra
         run: |
           SQS_URL=$(terraform output -raw sqs_queue_url)
           REDIS_HOST=$(terraform output -raw redis_endpoint)
