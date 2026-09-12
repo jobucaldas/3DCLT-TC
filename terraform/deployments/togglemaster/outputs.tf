@@ -4,10 +4,6 @@ output "app_secret_arns" {
   }
 }
 
-output "ecr_repository_urls" {
-  value = module.ecr.ecr_repository_urls
-}
-
 output "rds_endpoints" {
   value = module.rds.rds_endpoints
 }

@@ -1,3 +1,7 @@
+output "ecr_repository_urls" {
+  value = module.ecr.ecr_repository_urls
+}
+
 output "bucket_name" {
   value = module.r2.bucket_name
 }

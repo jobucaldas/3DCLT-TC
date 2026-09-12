@@ -32,15 +32,6 @@ module "dynamodb" {
   kms_key_arn  = module.kms.kms_key_arn
 }
 
-module "ecr" {
-  source = "../../modules/ecr"
-
-  project_name = var.project_name
-  environment  = var.environment
-  apps         = toset(keys(var.apps))
-  kms_key_arn  = module.kms.kms_key_arn
-}
-
 module "eks" {
   source = "../../modules/eks"
 
@@ -82,4 +73,12 @@ module "redis" {
   data_security_group_id = module.vpc.data_security_group_id
   redis_node_type        = var.redis_node_type
   kms_key_arn            = module.kms.kms_key_arn
+}
+
+module "argo" {
+  source = "../../modules/argo"
+
+  environment = var.environment
+
+  depends_on = [module.eks]
 }
