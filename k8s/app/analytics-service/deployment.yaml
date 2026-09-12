@@ -44,8 +44,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: analytics-service-config
-            - secretRef:
-                name: analytics-service-secret
           readinessProbe:
             httpGet:
               path: /health

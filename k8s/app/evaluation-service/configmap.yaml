@@ -7,3 +7,5 @@ data:
   FLAG_SERVICE_URL: "http://flag-service.togglemaster-flag.svc.cluster.local:8002"
   TARGETING_SERVICE_URL: "http://targeting-service.togglemaster-targeting.svc.cluster.local:8003"
   AWS_REGION: "us-east-1"
+  REDIS_URL: "redis://togglemaster-prod-redis.xxxxxx.0001.use1.cache.amazonaws.com:6379"
+  AWS_SQS_URL: "https://sqs.us-east-1.amazonaws.com/000000000000/togglemaster-prod-events"
