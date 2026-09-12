@@ -55,7 +55,7 @@ jobs:
         run: terraform init -input=false -backend-config="key=togglemaster/${{ matrix.environment }}/terraform.tfstate" -backend-config="access_key=$R2_ACCESS_KEY_ID" -backend-config="secret_key=$R2_SECRET_ACCESS_KEY"
 
       - name: Download Terraform Plan
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: terraform-plan-${{ matrix.environment }}
           path: terraform/deployments/togglemaster
