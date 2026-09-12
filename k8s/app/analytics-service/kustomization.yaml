@@ -12,3 +12,4 @@ resources:
   - scaled-object.yaml
   - ingress.yaml
   - networkpolicy.yaml
+  - namespaces.yaml
