@@ -18,6 +18,7 @@ resource "aws_db_instance" "postgres" {
   engine_version                = "16"
   instance_class                = var.rds_instance_class
   allocated_storage             = var.rds_allocated_storage_gb
+  storage_type                  = "gp3"
   db_name                       = each.value.db_name
   username                      = var.db_username
   manage_master_user_password   = true
