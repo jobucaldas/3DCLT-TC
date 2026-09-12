@@ -13,21 +13,22 @@ resource "aws_db_instance" "postgres" {
   #checkov:skip=CKV2_AWS_69:Demo clients are not configured to require PostgreSQL TLS.
   for_each = var.databases
 
-  identifier              = each.value.identifier
-  engine                  = "postgres"
-  engine_version          = "16"
-  instance_class          = var.rds_instance_class
-  allocated_storage       = var.rds_allocated_storage_gb
-  db_name                 = each.value.db_name
-  username                = var.db_username
-  password                = var.db_password
-  db_subnet_group_name    = aws_db_subnet_group.main.name
-  vpc_security_group_ids  = [var.data_security_group_id]
-  publicly_accessible     = false
-  multi_az                = false
-  storage_encrypted       = true
-  backup_retention_period = 7
-  deletion_protection     = false
+  identifier                    = each.value.identifier
+  engine                        = "postgres"
+  engine_version                = "16"
+  instance_class                = var.rds_instance_class
+  allocated_storage             = var.rds_allocated_storage_gb
+  db_name                       = each.value.db_name
+  username                      = var.db_username
+  manage_master_user_password   = true
+  master_user_secret_kms_key_id = var.kms_key_arn
+  db_subnet_group_name          = aws_db_subnet_group.main.name
+  vpc_security_group_ids        = [var.data_security_group_id]
+  publicly_accessible           = false
+  multi_az                      = false
+  storage_encrypted             = true
+  backup_retention_period       = 7
+  deletion_protection           = false
 
   performance_insights_kms_key_id = var.kms_key_arn
   parameter_group_name            = aws_db_parameter_group.postgres.name

@@ -47,16 +47,6 @@ variable "db_username" {
   }
 }
 
-variable "db_password" {
-  type      = string
-  sensitive = true
-
-  validation {
-    condition     = length(var.db_password) >= 8
-    error_message = "db_password must have at least 8 characters."
-  }
-}
-
 variable "rds_instance_class" {
   type = string
 }

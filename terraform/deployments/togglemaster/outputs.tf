@@ -24,11 +24,7 @@ output "app_pods_role_arn" {
   value = module.eks.app_pods_role_arn
 }
 
-output "kubernetes_secret_values" {
-  description = "Database URLs to populate in the corresponding application Secrets Manager secrets."
-  sensitive   = true
-
-  value = {
-    for name, database in local.databases : "${name}_database_url" => "postgres://${var.db_username}:${var.db_password}@${module.rds.rds_endpoints[name]}:5432/${database.db_name}"
-  }
+output "rds_master_secret_arns" {
+  description = "RDS-managed master user secrets (auto-rotated by AWS)."
+  value       = module.rds.master_secret_arns
 }

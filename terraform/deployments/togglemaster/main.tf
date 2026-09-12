@@ -58,7 +58,6 @@ module "rds" {
   data_security_group_id   = module.vpc.data_security_group_id
   databases                = local.databases
   db_username              = var.db_username
-  db_password              = var.db_password
   rds_instance_class       = var.rds_instance_class
   rds_allocated_storage_gb = var.rds_allocated_storage_gb
   kms_key_arn              = module.kms.kms_key_arn
@@ -72,7 +71,6 @@ module "redis" {
   private_subnet_ids     = module.vpc.private_subnet_ids
   data_security_group_id = module.vpc.data_security_group_id
   redis_node_type        = var.redis_node_type
-  kms_key_arn            = module.kms.kms_key_arn
 }
 
 module "argo" {
