@@ -1,0 +1,161 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [main, t2, t3]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  terraform:
+    name: Terraform Plan and Apply
+    uses: ./.github/workflows/tf-apply.yaml
+    secrets: inherit
+
+  sync:
+    name: Sync infra to k8s environment
+    runs-on: ubuntu-latest
+    needs: terraform
+    environment: prod
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v4
+
+      - name: Init prod
+        working-directory: terraform/deployments/togglemaster
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          terraform init -input=false -backend-config='key=togglemaster/prod/terraform.tfstate' -backend-config='access_key=$R2_ACCESS_KEY_ID' -backend-config='secret_key=$R2_SECRET_ACCESS_KEY'
+
+      - name: Sync URLs
+        shell: bash
+        working-directory: terraform/deployments/togglemaster
+        run: |
+          SQS_URL=$(terraform output -raw sqs_queue_url)
+          REDIS_HOST=$(terraform output -raw redis_endpoint)
+          DYNAMODB_TABLE=$(terraform output -raw dynamodb_table_name)
+          REDIS_URL="redis://${REDIS_HOST}:6379"
+          RDS_AUTH_ARN=$(terraform output -json rds_master_secret_arns | jq -r '.["auth-service"]')
+          RDS_FLAG_ARN=$(terraform output -json rds_master_secret_arns | jq -r '.["flag-service"]')
+          RDS_TARGETING_ARN=$(terraform output -json rds_master_secret_arns | jq -r '.["targeting-service"]')
+          cd $GITHUB_WORKSPACE
+
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo chmod +x /usr/local/bin/yq
+          yq -i ".data.AWS_SQS_URL = \"$SQS_URL\""               k8s/app/analytics-service/configmap.yaml
+          yq -i ".data.AWS_DYNAMODB_TABLE = \"$DYNAMODB_TABLE\"" k8s/app/analytics-service/configmap.yaml
+          yq -i ".data.AWS_SQS_URL = \"$SQS_URL\""               k8s/app/evaluation-service/configmap.yaml
+          yq -i ".data.REDIS_URL = \"$REDIS_URL\""               k8s/app/evaluation-service/configmap.yaml
+          yq -i '(.spec.data[] | select(.secretKey | test("^rds_")) | .remoteRef.key) = env(RDS_AUTH_ARN)'      k8s/app/auth-service/external-secret.yaml
+          yq -i '(.spec.data[] | select(.secretKey | test("^rds_")) | .remoteRef.key) = env(RDS_FLAG_ARN)'      k8s/app/flag-service/external-secret.yaml
+          yq -i '(.spec.data[] | select(.secretKey | test("^rds_")) | .remoteRef.key) = env(RDS_TARGETING_ARN)' k8s/app/targeting-service/external-secret.yaml
+
+          git diff --quiet -- k8s/app/analytics-service/configmap.yaml k8s/app/evaluation-service/configmap.yaml k8s/app/auth-service/external-secret.yaml k8s/app/flag-service/external-secret.yaml k8s/app/targeting-service/external-secret.yaml && echo "no infra sync changes" && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/app/analytics-service/configmap.yaml k8s/app/evaluation-service/configmap.yaml k8s/app/auth-service/external-secret.yaml k8s/app/flag-service/external-secret.yaml k8s/app/targeting-service/external-secret.yaml
+          git commit -m "chore(prod): sync infra urls ${{ github.sha }}"
+          git push origin HEAD:${{ github.ref_name }}
+
+  seed:
+    name: Seed environment secrets
+    runs-on: ubuntu-latest
+    needs: terraform
+    environment: prod
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Check secrets exist
+        id: check
+        shell: bash
+        run: |
+          MASTER_EXISTS=$(aws secretsmanager get-secret-value --secret-id togglemaster/prod/auth-service --query SecretString --output text 2>/dev/null | jq -r '.MASTER_KEY // empty')
+          SERVICE_EXISTS=$(aws secretsmanager get-secret-value --secret-id togglemaster/prod/evaluation-service --query SecretString --output text 2>/dev/null | jq -r '.SERVICE_API_KEY // empty')
+          if [ -n "$MASTER_EXISTS" ] && [ -n "$SERVICE_EXISTS" ]; then
+            echo "needed=false" >> $GITHUB_OUTPUT
+            echo "both secrets exist, skipping seed"
+          else
+            echo "needed=true" >> $GITHUB_OUTPUT
+            echo "seed needed"
+          fi
+
+      - name: Create MASTER_KEY
+        if: steps.check.outputs.needed == 'true'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import boto3, secrets, json, os
+          region=os.environ.get('AWS_REGION', 'us-east-1')
+          sm=boto3.client('secretsmanager', region_name=region)
+
+          def ensure(sid, key, prefix=''):
+            try:
+              r=sm.get_secret_value(SecretId=sid)
+              cur=json.loads(r.get('SecretString') or '{}')
+            except Exception:
+              cur={}
+
+            if cur.get(key):
+              print(sid+' '+key+' exists')
+              return
+
+            cur[key]=prefix+secrets.token_hex(32)
+            sm.put_secret_value(SecretId=sid, SecretString=json.dumps(cur))
+            print('seeded '+sid+' '+key)
+
+          ensure('togglemaster/prod/auth-service', 'MASTER_KEY')
+          PY
+
+      - name: Create SERVICE_KEY
+        if: steps.check.outputs.needed == 'true'
+        shell: bash
+        run: |
+          MASTER_KEY=$(aws secretsmanager get-secret-value --secret-id togglemaster/prod/auth-service --query SecretString --output text | jq -r .MASTER_KEY)
+          EXISTING_KEY=$(aws secretsmanager get-secret-value --secret-id togglemaster/prod/evaluation-service --query SecretString --output text 2>/dev/null | jq -r '.SERVICE_API_KEY // empty')
+
+          aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name togglemaster-prod-eks
+          kubectl rollout status deployment/auth-service -n togglemaster-auth --timeout=180s
+          kubectl port-forward svc/auth-service 8001:8001 -n togglemaster-auth >/tmp/pf.log 2>&1 &
+          PF_PID=$!
+
+          for i in $(seq 1 30); do curl -sf http://localhost:8001/health && break; sleep 5; done
+          if [ -n "$EXISTING_KEY" ]; then
+            if curl -sf http://localhost:8001/validate -H "Authorization: Bearer $EXISTING_KEY" >/dev/null; then
+              echo "SERVICE_API_KEY already valid, skip create"
+              kill $PF_PID || true
+              exit 0
+            fi
+          fi
+
+          SERVICE_KEY=$(curl -s -X POST http://localhost:8001/admin/keys -H "Authorization: Bearer $MASTER_KEY" -H "Content-Type: application/json" -d '{"name":"evaluation-service-prod"}' | jq -r .key)
+
+          if [ -z "$SERVICE_KEY" ] || [ "$SERVICE_KEY" = "null" ]; then
+            echo "create-key failed"
+            cat /tmp/pf.log
+            kill $PF_PID || true
+            exit 1
+          fi
+
+          CUR=$(aws secretsmanager get-secret-value --secret-id togglemaster/prod/evaluation-service --query SecretString --output text 2>/dev/null || echo '{}')
+          NEW=$(echo "$CUR" | jq --arg k "$SERVICE_KEY" '. + {SERVICE_API_KEY:$k}')
+
+          aws secretsmanager put-secret-value --secret-id togglemaster/prod/evaluation-service --secret-string "$NEW" >/dev/null
+          curl -f http://localhost:8001/health
+          curl -f http://localhost:8001/validate -H "Authorization: Bearer $SERVICE_KEY"
+          kill $PF_PID || true

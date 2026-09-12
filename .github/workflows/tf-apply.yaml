@@ -1,21 +1,15 @@
 name: Terraform Apply
 
 on:
-  push:
-    branches: [main, t2, t3]
-    paths:
-      - 'terraform/deployments/togglemaster/**'
-      - 'terraform/modules/**'
-      - '.github/workflows/tf-apply.yaml'
-      - '.github/workflows/tf-plan.yaml'
+  workflow_call:
 
 permissions:
-  contents: write
+  contents: read
   id-token: write
 
 jobs:
   terraform-plan:
-    name: Terraform Plan ${{ matrix.environment }}
+    name: Terraform Plan (${{ matrix.environment }})
     strategy:
       fail-fast: false
       matrix:
@@ -26,7 +20,7 @@ jobs:
     secrets: inherit
 
   terraform-apply:
-    name: Terraform Apply ${{ matrix.environment }}
+    name: Terraform Apply (${{ matrix.environment }})
     runs-on: ubuntu-latest
     needs: terraform-plan
     strategy:
@@ -53,7 +47,7 @@ jobs:
         env:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        run: terraform init -input=false -backend-config="key=togglemaster/${{ matrix.environment }}/terraform.tfstate" -backend-config="access_key=$R2_ACCESS_KEY_ID" -backend-config="secret_key=$R2_SECRET_ACCESS_KEY"
+        run: terraform init -input=false -backend-config='key=togglemaster/${{ matrix.environment }}/terraform.tfstate' -backend-config='access_key=$R2_ACCESS_KEY_ID' -backend-config='secret_key=$R2_SECRET_ACCESS_KEY'
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v7
@@ -64,34 +58,4 @@ jobs:
       - name: Terraform Apply
         shell: bash
         working-directory: terraform/deployments/togglemaster
-        run: terraform apply -var-file=${{ matrix.environment }}.tfvars -auto-approve tfplan
-
-      - name: Sync environment variables to kubernetes
-        if: matrix.environment == 'prod'
-        shell: bash
-        working-directory: terraform/deployments/togglemaster
-        run: |
-          SQS_URL=$(terraform output -raw sqs_queue_url)
-          REDIS_HOST=$(terraform output -raw redis_endpoint)
-          DYNAMODB_TABLE=$(terraform output -raw dynamodb_table_name)
-          REDIS_URL="redis://${REDIS_HOST}:6379"
-          RDS_AUTH_ARN=$(terraform output -json rds_master_secret_arns | jq -r '.["auth-service"]')
-          RDS_FLAG_ARN=$(terraform output -json rds_master_secret_arns | jq -r '.["flag-service"]')
-          RDS_TARGETING_ARN=$(terraform output -json rds_master_secret_arns | jq -r '.["targeting-service"]')
-          cd $GITHUB_WORKSPACE
-
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo chmod +x /usr/local/bin/yq
-          yq -i ".data.AWS_SQS_URL = \"$SQS_URL\""               k8s/app/analytics-service/configmap.yaml
-          yq -i ".data.AWS_DYNAMODB_TABLE = \"$DYNAMODB_TABLE\"" k8s/app/analytics-service/configmap.yaml
-          yq -i ".data.AWS_SQS_URL = \"$SQS_URL\""               k8s/app/evaluation-service/configmap.yaml
-          yq -i ".data.REDIS_URL = \"$REDIS_URL\""               k8s/app/evaluation-service/configmap.yaml
-          yq -i '(.spec.data[] | select(.secretKey | test("^rds_")) | .remoteRef.key) = env(RDS_AUTH_ARN)'      k8s/app/auth-service/external-secret.yaml
-          yq -i '(.spec.data[] | select(.secretKey | test("^rds_")) | .remoteRef.key) = env(RDS_FLAG_ARN)'      k8s/app/flag-service/external-secret.yaml
-          yq -i '(.spec.data[] | select(.secretKey | test("^rds_")) | .remoteRef.key) = env(RDS_TARGETING_ARN)' k8s/app/targeting-service/external-secret.yaml
-
-          git diff --quiet -- k8s/app/analytics-service/configmap.yaml k8s/app/evaluation-service/configmap.yaml k8s/app/auth-service/external-secret.yaml k8s/app/flag-service/external-secret.yaml k8s/app/targeting-service/external-secret.yaml && echo "no infra sync changes" && exit 0
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add k8s/app/analytics-service/configmap.yaml k8s/app/evaluation-service/configmap.yaml k8s/app/auth-service/external-secret.yaml k8s/app/flag-service/external-secret.yaml k8s/app/targeting-service/external-secret.yaml
-          git commit -m "chore(prod): sync infra urls ${{ github.sha }}"
-          git push origin HEAD:${{ github.ref_name }}
+        run: terraform apply -auto-approve tfplan
