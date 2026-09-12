@@ -10,4 +10,4 @@ resources:
   - deployment.yaml
   - ingress.yaml
   - networkpolicy.yaml
-  - namespaces.yaml
+  - namespace.yaml
