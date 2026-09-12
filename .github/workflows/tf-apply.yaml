@@ -9,31 +9,30 @@ on:
       - '.github/workflows/tf-apply.yaml'
       - '.github/workflows/tf-plan.yaml'
 
-  workflow_call:
-    inputs:
-      environment:
-        description: "Terraform environment to deploy to: dev or prod"
-        required: false
-        default: "dev"
-        type: string
-
 permissions:
   contents: read
   id-token: write
 
-
 jobs:
   terraform-plan:
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, prod]
     uses: ./.github/workflows/tf-plan.yaml
     with:
-      environment: ${{ inputs.environment || 'dev' }}
+      environment: ${{ matrix.environment }}
+    secrets: inherit
 
   terraform-apply:
-    name: Terraform Apply
+    name: Terraform Apply ${{ matrix.environment }}
     runs-on: ubuntu-latest
     needs: terraform-plan
-    if: needs.terraform-plan.outputs.has_changes == 'true'
-    environment: ${{ inputs.environment || 'dev' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, prod]
+    environment: ${{ matrix.environment }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -53,17 +52,17 @@ jobs:
         env:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        run: terraform init -input=false -backend-config="key=togglemaster/${{ inputs.environment || 'dev' }}/terraform.tfstate" -backend-config="access_key=$R2_ACCESS_KEY_ID" -backend-config="secret_key=$R2_SECRET_ACCESS_KEY"
+        run: terraform init -input=false -backend-config="key=togglemaster/${{ matrix.environment }}/terraform.tfstate" -backend-config="access_key=$R2_ACCESS_KEY_ID" -backend-config="secret_key=$R2_SECRET_ACCESS_KEY"
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v7
         with:
-          name: terraform-plan
-          path: .
+          name: terraform-plan-${{ matrix.environment }}
+          path: terraform/deployments/togglemaster
 
       - name: Terraform Apply
         shell: bash
         env:
-          TF_VAR_db_password: ${{ secrets.db_password }}
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
         working-directory: terraform/deployments/togglemaster
-        run: terraform apply -var-file=${{ inputs.environment || 'dev' }}.tfvars -auto-approve tfplan
+        run: terraform apply -var-file=${{ matrix.environment }}.tfvars -auto-approve tfplan
