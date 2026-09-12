@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   terraform-plan:
+    name: Terraform Plan ${{ matrix.environment }}
     strategy:
       fail-fast: false
       matrix:

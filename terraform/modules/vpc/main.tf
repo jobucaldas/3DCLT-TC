@@ -9,7 +9,7 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
 
   tags = merge(local.common_tags, {
-    Name = "${var.project_name}-vpc"
+    Name = "${var.project_name}-${var.environment}-vpc"
   })
 }
 
@@ -17,7 +17,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = merge(local.common_tags, {
-    Name = "${var.project_name}-igw"
+    Name = "${var.project_name}-${var.environment}-igw"
   })
 }
 
@@ -30,9 +30,9 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = merge(local.common_tags, {
-    Name                                            = "${var.project_name}-public-${count.index + 1}"
-    "kubernetes.io/role/elb"                        = "1"
-    "kubernetes.io/cluster/${var.project_name}-eks" = "shared"
+    Name                                                               = "${var.project_name}-${var.environment}-public-${count.index + 1}"
+    "kubernetes.io/role/elb"                                           = "1"
+    "kubernetes.io/cluster/${var.project_name}-${var.environment}-eks" = "shared"
   })
 }
 
@@ -45,9 +45,9 @@ resource "aws_subnet" "private" {
   map_public_ip_on_launch = false
 
   tags = merge(local.common_tags, {
-    Name                                            = "${var.project_name}-private-${count.index + 1}"
-    "kubernetes.io/role/internal-elb"               = "1"
-    "kubernetes.io/cluster/${var.project_name}-eks" = "shared"
+    Name                                                               = "${var.project_name}-${var.environment}-private-${count.index + 1}"
+    "kubernetes.io/role/internal-elb"                                  = "1"
+    "kubernetes.io/cluster/${var.project_name}-${var.environment}-eks" = "shared"
   })
 }
 
@@ -60,7 +60,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = merge(local.common_tags, {
-    Name = "${var.project_name}-public-rt"
+    Name = "${var.project_name}-${var.environment}-public-rt"
   })
 }
 
@@ -77,7 +77,7 @@ resource "aws_eip" "nat" {
   domain = "vpc"
 
   tags = merge(local.common_tags, {
-    Name = "${var.project_name}-nat-eip-${count.index + 1}"
+    Name = "${var.project_name}-${var.environment}-nat-eip-${count.index + 1}"
   })
 }
 
@@ -88,7 +88,7 @@ resource "aws_nat_gateway" "main" {
   subnet_id     = aws_subnet.public[count.index].id
 
   tags = merge(local.common_tags, {
-    Name = "${var.project_name}-nat-${count.index + 1}"
+    Name = "${var.project_name}-${var.environment}-nat-${count.index + 1}"
   })
 
   depends_on = [aws_internet_gateway.main]
@@ -105,7 +105,7 @@ resource "aws_route_table" "private" {
   }
 
   tags = merge(local.common_tags, {
-    Name = "${var.project_name}-private-rt-${count.index + 1}"
+    Name = "${var.project_name}-${var.environment}-private-rt-${count.index + 1}"
   })
 }
 
@@ -118,7 +118,7 @@ resource "aws_route_table_association" "private" {
 
 resource "aws_security_group" "data" {
   #checkov:skip=CKV2_AWS_5:Attached to RDS and ElastiCache through module input data_security_group_id.
-  name        = "${var.project_name}-data-sg"
+  name        = "${var.project_name}-${var.environment}-data-sg"
   description = "Allows EKS nodes to reach RDS and Redis."
   vpc_id      = aws_vpc.main.id
 
@@ -139,7 +139,7 @@ resource "aws_security_group" "data" {
   }
 
   tags = merge(local.common_tags, {
-    Name = "${var.project_name}-data-sg"
+    Name = "${var.project_name}-${var.environment}-data-sg"
   })
 }
 

@@ -1,5 +1,5 @@
 resource "aws_eks_cluster" "main" {
-  name     = "${var.project_name}-eks"
+  name     = "${var.project_name}-${var.environment}-eks"
   role_arn = aws_iam_role.eks_cluster.arn
 
   vpc_config {
@@ -33,7 +33,7 @@ resource "aws_eks_cluster" "main" {
 
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
-  node_group_name = "${var.project_name}-nodes"
+  node_group_name = "${var.project_name}-${var.environment}-nodes"
   node_role_arn   = aws_iam_role.eks_node_group.arn
   subnet_ids      = var.private_subnet_ids
   instance_types  = var.eks_node_instance_types

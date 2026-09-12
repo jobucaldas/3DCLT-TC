@@ -19,12 +19,12 @@ data "aws_iam_policy_document" "main" {
 }
 
 resource "aws_kms_key" "main" {
-  description         = "${var.project_name} encryption key"
+  description         = "${var.project_name}-${var.environment} encryption key"
   enable_key_rotation = true
   policy              = data.aws_iam_policy_document.main.json
 }
 
 resource "aws_kms_alias" "main" {
-  name          = "alias/${var.project_name}"
+  name          = "alias/${var.project_name}-${var.environment}"
   target_key_id = aws_kms_key.main.key_id
 }

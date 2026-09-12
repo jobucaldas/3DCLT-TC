@@ -1,9 +1,9 @@
 resource "aws_db_subnet_group" "main" {
-  name       = "${var.project_name}-rds-subnets"
+  name       = "${var.project_name}-${var.environment}-rds-subnets"
   subnet_ids = var.private_subnet_ids
 
   tags = merge(local.common_tags, {
-    Name = "${var.project_name}-rds-subnets"
+    Name = "${var.project_name}-${var.environment}-rds-subnets"
   })
 }
 
@@ -50,7 +50,7 @@ resource "aws_db_instance" "postgres" {
 }
 
 resource "aws_db_parameter_group" "postgres" {
-  name   = "${var.project_name}-postgres16"
+  name   = "${var.project_name}-${var.environment}-postgres16"
   family = "postgres16"
 
   parameter {

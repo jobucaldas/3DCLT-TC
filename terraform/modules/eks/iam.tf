@@ -1,7 +1,7 @@
 data "aws_caller_identity" "current" {}
 
 resource "aws_iam_role_policy" "app_aws_access" {
-  name = "${var.project_name}-app-aws-access"
+  name = "${var.project_name}-${var.environment}-app-aws-access"
   role = aws_iam_role.app_pods.id
 
   policy = jsonencode({
@@ -31,7 +31,7 @@ resource "aws_iam_role_policy" "app_aws_access" {
 }
 
 resource "aws_iam_role" "app_pods" {
-  name = "${var.project_name}-app-pods-role"
+  name = "${var.project_name}-${var.environment}-app-pods-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -56,7 +56,7 @@ resource "aws_iam_role" "app_pods" {
 }
 
 resource "aws_iam_role" "external_secrets" {
-  name = "${var.project_name}-external-secrets-role"
+  name = "${var.project_name}-${var.environment}-external-secrets-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -79,7 +79,7 @@ resource "aws_iam_role" "external_secrets" {
 }
 
 resource "aws_iam_role_policy" "external_secrets_read" {
-  name = "${var.project_name}-external-secrets-read"
+  name = "${var.project_name}-${var.environment}-external-secrets-read"
   role = aws_iam_role.external_secrets.id
 
   policy = jsonencode({
@@ -90,13 +90,13 @@ resource "aws_iam_role_policy" "external_secrets_read" {
         "secretsmanager:GetSecretValue",
         "secretsmanager:DescribeSecret"
       ]
-      Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/*"
+      Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.project_name}/${var.environment}/*"
     }]
   })
 }
 
 resource "aws_iam_role" "keda_operator" {
-  name = "${var.project_name}-keda-operator-role"
+  name = "${var.project_name}-${var.environment}-keda-operator-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -119,7 +119,7 @@ resource "aws_iam_role" "keda_operator" {
 }
 
 resource "aws_iam_role_policy" "keda_sqs" {
-  name = "${var.project_name}-keda-sqs-read"
+  name = "${var.project_name}-${var.environment}-keda-sqs-read"
   role = aws_iam_role.keda_operator.id
 
   policy = jsonencode({
@@ -136,7 +136,7 @@ resource "aws_iam_role_policy" "keda_sqs" {
 }
 
 resource "aws_iam_role" "eks_cluster" {
-  name = "${var.project_name}-eks-cluster-role"
+  name = "${var.project_name}-${var.environment}-eks-cluster-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -160,7 +160,7 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 }
 
 resource "aws_iam_role" "eks_node_group" {
-  name = "${var.project_name}-eks-node-role"
+  name = "${var.project_name}-${var.environment}-eks-node-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

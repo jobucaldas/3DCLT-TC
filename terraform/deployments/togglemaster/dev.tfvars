@@ -25,7 +25,7 @@ vpc_cidr             = "10.43.0.0/16"
 public_subnet_cidrs  = ["10.43.1.0/24", "10.43.2.0/24"]
 private_subnet_cidrs = ["10.43.101.0/24", "10.43.102.0/24"]
 
-db_username = "togglemaster-dev"
+db_username = "togglemaster_dev"
 # Set TF_VAR_db_password outside Git (for example in your CI secret store).
 rds_instance_class       = "db.t4g.micro"
 rds_allocated_storage_gb = 20
