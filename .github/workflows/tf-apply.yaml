@@ -10,7 +10,7 @@ on:
       - '.github/workflows/tf-plan.yaml'
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -67,3 +67,29 @@ jobs:
           TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
         working-directory: terraform/deployments/togglemaster
         run: terraform apply -var-file=${{ matrix.environment }}.tfvars -auto-approve tfplan
+
+      - name: Sync URLs to ConfigMaps
+        if: matrix.environment == 'prod'
+        shell: bash
+        working-directory: terraform/deployments/togglemaster
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+        run: |
+          SQS_URL=$(terraform output -raw sqs_queue_url)
+          REDIS_HOST=$(terraform output -raw redis_endpoint)
+          DYNAMODB_TABLE=$(terraform output -raw dynamodb_table_name)
+          REDIS_URL="redis://${REDIS_HOST}:6379"
+          cd $GITHUB_WORKSPACE
+
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo chmod +x /usr/local/bin/yq
+          yq -i ".data.AWS_SQS_URL = \"$SQS_URL\""               k8s/app/analytics-service/configmap.yaml
+          yq -i ".data.AWS_DYNAMODB_TABLE = \"$DYNAMODB_TABLE\"" k8s/app/analytics-service/configmap.yaml
+          yq -i ".data.AWS_SQS_URL = \"$SQS_URL\""               k8s/app/evaluation-service/configmap.yaml
+          yq -i ".data.REDIS_URL = \"$REDIS_URL\""               k8s/app/evaluation-service/configmap.yaml
+
+          git diff --quiet -- k8s/app/analytics-service/configmap.yaml k8s/app/evaluation-service/configmap.yaml && echo "no configmap changes" && exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/app/analytics-service/configmap.yaml k8s/app/evaluation-service/configmap.yaml
+          git commit -m "chore(prod): sync infra urls ${{ github.sha }}"
+          git push
