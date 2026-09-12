@@ -24,5 +24,16 @@ variable "location" {
 variable "environments" {
   description = "Environments where states will be kept"
   type        = set(string)
-  default     = ["requirements", "dev", "prod"]
+  default     = ["shared", "dev", "prod"]
+}
+
+variable "aws_region" {
+  type    = string
+  default = "us-east-1"
+}
+
+variable "apps" {
+  description = "Shared ECR repos used by every environment."
+  type        = set(string)
+  default     = ["auth-service", "flag-service", "targeting-service", "evaluation-service", "analytics-service"]
 }

@@ -5,3 +5,10 @@ module "r2" {
   cloudflare_account_id = var.cloudflare_account_id
   location              = var.location
 }
+
+module "ecr" {
+  source = "../../modules/ecr"
+
+  project_name = var.project_name
+  apps         = var.apps
+}

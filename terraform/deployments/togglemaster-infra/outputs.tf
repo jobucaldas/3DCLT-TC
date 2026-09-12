@@ -4,10 +4,6 @@ output "app_secret_arns" {
   }
 }
 
-output "ecr_repository_urls" {
-  value = module.ecr.ecr_repository_urls
-}
-
 output "rds_endpoints" {
   value = module.rds.rds_endpoints
 }
@@ -28,11 +24,19 @@ output "app_pods_role_arn" {
   value = module.eks.app_pods_role_arn
 }
 
-output "kubernetes_secret_values" {
-  description = "Database URLs to populate in the corresponding application Secrets Manager secrets."
-  sensitive   = true
+output "eks_cluster_name" {
+  value = module.eks.eks_cluster_name
+}
 
-  value = {
-    for name, database in local.databases : "${name}_database_url" => "postgres://${var.db_username}:${var.db_password}@${module.rds.rds_endpoints[name]}:5432/${database.db_name}"
-  }
+output "external_secrets_role_arn" {
+  value = module.eks.external_secrets_role_arn
+}
+
+output "keda_operator_role_arn" {
+  value = module.eks.keda_operator_role_arn
+}
+
+output "rds_master_secret_arns" {
+  description = "RDS-managed master user secrets (auto-rotated by AWS)."
+  value       = module.rds.master_secret_arns
 }

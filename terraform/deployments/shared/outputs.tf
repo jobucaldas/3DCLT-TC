@@ -1,3 +1,7 @@
+output "ecr_repository_urls" {
+  value = module.ecr.ecr_repository_urls
+}
+
 output "bucket_name" {
   value = module.r2.bucket_name
 }
@@ -11,7 +15,7 @@ output "backend_configs" {
   value = {
     for env in var.environments : env => {
       bucket   = module.r2.bucket_name
-      key      = env == "requirements" ? "requirements/terraform.tfstate" : "${var.project_name}/${env}/terraform.tfstate"
+      key      = "${var.project_name}/${env}/terraform.tfstate"
       region   = "auto"
       endpoint = module.r2.r2_endpoint
     }
