@@ -11,8 +11,7 @@ resource "aws_ecr_repository" "service" {
   image_tag_mutability = "IMMUTABLE"
 
   encryption_configuration {
-    encryption_type = "KMS"
-    kms_key         = var.kms_key_arn
+    encryption_type = "AES256"
   }
 
   tags = local.common_tags

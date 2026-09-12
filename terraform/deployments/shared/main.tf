@@ -6,17 +6,9 @@ module "r2" {
   location              = var.location
 }
 
-module "kms_shared" {
-  source = "../../modules/kms"
-
-  project_name = var.project_name
-  environment  = "shared"
-}
-
 module "ecr" {
   source = "../../modules/ecr"
 
   project_name = var.project_name
   apps         = var.apps
-  kms_key_arn  = module.kms_shared.kms_key_arn
 }
