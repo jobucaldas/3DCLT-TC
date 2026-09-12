@@ -25,7 +25,7 @@ vpc_cidr             = "10.42.0.0/16"
 public_subnet_cidrs  = ["10.42.1.0/24", "10.42.2.0/24"]
 private_subnet_cidrs = ["10.42.101.0/24", "10.42.102.0/24"]
 
-db_username = "togglemaster"
+db_username              = "togglemaster"
 rds_instance_class       = "db.t4g.micro"
 rds_allocated_storage_gb = 20
 redis_node_type          = "cache.t3.micro"
