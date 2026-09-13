@@ -9,25 +9,44 @@ permissions:
   id-token: write
 
 jobs:
-  terraform-infra:
-    name: Terraform Plan and Apply infra
+  terraform-infra-dev:
+    name: Terraform Plan and Apply infra dev
     uses: ./.github/workflows/tf-apply.yaml
     with:
       deployment: infra
+      environment: dev
     secrets: inherit
 
-  terraform-app:
-    name: Terraform Plan and Apply app
-    needs: terraform-infra
+  terraform-infra-prod:
+    name: Terraform Plan and Apply infra prod
+    uses: ./.github/workflows/tf-apply.yaml
+    with:
+      deployment: infra
+      environment: prod
+    secrets: inherit
+
+  terraform-app-dev:
+    name: Terraform Plan and Apply app dev
+    needs: terraform-infra-dev
     uses: ./.github/workflows/tf-apply.yaml
     with:
       deployment: app
+      environment: dev
+    secrets: inherit
+
+  terraform-app-prod:
+    name: Terraform Plan and Apply app prod
+    needs: terraform-infra-prod
+    uses: ./.github/workflows/tf-apply.yaml
+    with:
+      deployment: app
+      environment: prod
     secrets: inherit
 
   sync:
     name: Sync infra to k8s environment
     runs-on: ubuntu-latest
-    needs: terraform-app
+    needs: terraform-app-prod
     environment: prod
     steps:
       - uses: actions/checkout@v7
@@ -82,7 +101,7 @@ jobs:
   seed:
     name: Seed environment secrets
     runs-on: ubuntu-latest
-    needs: terraform-app
+    needs: terraform-app-prod
     environment: prod
     steps:
       - uses: aws-actions/configure-aws-credentials@v6
