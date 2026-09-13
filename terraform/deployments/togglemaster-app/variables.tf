@@ -10,3 +10,13 @@ variable "environment" {
 variable "cluster_name" {
   type = string
 }
+
+variable "repo_url" {
+  type    = string
+  default = "https://github.com/jobucaldas/3DCLT-TC.git"
+}
+
+variable "target_revision" {
+  type    = string
+  default = "t3"
+}

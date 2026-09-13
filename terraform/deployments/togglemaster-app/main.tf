@@ -1,5 +1,59 @@
-module "argo" {
-  source = "../../modules/argo"
+resource "kubernetes_manifest" "operators" {
+  manifest = {
+    apiVersion = "argoproj.io/v1alpha1"
+    kind       = "Application"
+    metadata = {
+      name      = "operators"
+      namespace = "argocd-${var.environment}"
+    }
+    spec = {
+      project = "default"
+      source = {
+        repoURL        = var.repo_url
+        targetRevision = var.target_revision
+        path           = "k8s/helm"
+      }
+      destination = {
+        server    = "https://kubernetes.default.svc"
+        namespace = "argocd-${var.environment}"
+      }
+      syncPolicy = {
+        automated = {
+          prune    = true
+          selfHeal = true
+        }
+        syncOptions = ["CreateNamespace=true"]
+      }
+    }
+  }
+}
 
-  environment = var.environment
+resource "kubernetes_manifest" "togglemaster" {
+  manifest = {
+    apiVersion = "argoproj.io/v1alpha1"
+    kind       = "Application"
+    metadata = {
+      name      = "togglemaster"
+      namespace = "argocd-${var.environment}"
+    }
+    spec = {
+      project = "default"
+      source = {
+        repoURL        = var.repo_url
+        targetRevision = var.target_revision
+        path           = "k8s/app"
+      }
+      destination = {
+        server    = "https://kubernetes.default.svc"
+        namespace = "argocd-${var.environment}"
+      }
+      syncPolicy = {
+        automated = {
+          prune    = true
+          selfHeal = true
+        }
+        syncOptions = ["CreateNamespace=true"]
+      }
+    }
+  }
 }

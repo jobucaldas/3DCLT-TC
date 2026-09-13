@@ -72,3 +72,11 @@ module "redis" {
   data_security_group_id = module.vpc.data_security_group_id
   redis_node_type        = var.redis_node_type
 }
+
+module "argo" {
+  source = "../../modules/argo"
+
+  environment = var.environment
+
+  depends_on = [module.eks]
+}
