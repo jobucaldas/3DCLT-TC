@@ -2,6 +2,12 @@ name: Terraform Apply
 
 on:
   workflow_call:
+    inputs:
+      deployment:
+        description: Terraform deployment
+        required: false
+        default: infra
+        type: string
 
 permissions:
   contents: read
@@ -9,27 +15,25 @@ permissions:
 
 jobs:
   terraform-plan:
-    name: Terraform Plan (${{ matrix.deployment }} ${{ matrix.environment }})
+    name: Terraform Plan (${{ inputs.deployment }} ${{ matrix.environment }})
     strategy:
       fail-fast: false
       matrix:
         environment: [dev, prod]
-        deployment: [infra, app]
     uses: ./.github/workflows/tf-plan.yaml
     with:
       environment: ${{ matrix.environment }}
-      deployment: ${{ matrix.deployment }}
+      deployment: ${{ inputs.deployment }}
     secrets: inherit
 
   terraform-apply:
-    name: Terraform Apply (${{ matrix.deployment }} ${{ matrix.environment }})
+    name: Terraform Apply (${{ inputs.deployment }} ${{ matrix.environment }})
     runs-on: ubuntu-latest
     needs: terraform-plan
     strategy:
       fail-fast: false
       matrix:
         environment: [dev, prod]
-        deployment: [infra, app]
     environment: ${{ matrix.environment }}
     steps:
       - uses: actions/checkout@v7
@@ -46,19 +50,19 @@ jobs:
         uses: hashicorp/setup-terraform@v4
 
       - name: Terraform Init
-        working-directory: terraform/deployments/togglemaster-${{ matrix.deployment }}
+        working-directory: terraform/deployments/togglemaster-${{ inputs.deployment }}
         env:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        run: terraform init -input=false -backend-config='key=togglemaster/${{ matrix.deployment }}/${{ matrix.environment }}/terraform.tfstate' -backend-config='access_key=$R2_ACCESS_KEY_ID' -backend-config='secret_key=$R2_SECRET_ACCESS_KEY'
+        run: terraform init -input=false -backend-config='key=togglemaster/${{ inputs.deployment }}/${{ matrix.environment }}/terraform.tfstate' -backend-config='access_key=$R2_ACCESS_KEY_ID' -backend-config='secret_key=$R2_SECRET_ACCESS_KEY'
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v7
         with:
-          name: terraform-plan-${{ matrix.deployment }}-${{ matrix.environment }}
-          path: terraform/deployments/togglemaster-${{ matrix.deployment }}
+          name: terraform-plan-${{ inputs.deployment }}-${{ matrix.environment }}
+          path: terraform/deployments/togglemaster-${{ inputs.deployment }}
 
       - name: Terraform Apply
         shell: bash
-        working-directory: terraform/deployments/togglemaster-${{ matrix.deployment }}
+        working-directory: terraform/deployments/togglemaster-${{ inputs.deployment }}
         run: terraform apply -auto-approve tfplan
