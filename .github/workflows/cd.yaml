@@ -9,34 +9,17 @@ permissions:
   id-token: write
 
 jobs:
-  terraform-infra-dev:
-    name: Terraform Plan and Apply infra dev
-    uses: ./.github/workflows/tf-apply.yaml
-    with:
-      deployment: infra
-      environment: dev
-    secrets: inherit
-
-  terraform-infra-prod:
-    name: Terraform Plan and Apply infra prod
+  terraform-infra:
+    name: Terraform Plan and Apply Infra
     uses: ./.github/workflows/tf-apply.yaml
     with:
       deployment: infra
       environment: prod
     secrets: inherit
 
-  terraform-app-dev:
-    name: Terraform Plan and Apply app dev
-    needs: terraform-infra-dev
-    uses: ./.github/workflows/tf-apply.yaml
-    with:
-      deployment: app
-      environment: dev
-    secrets: inherit
-
   terraform-app-prod:
-    name: Terraform Plan and Apply app prod
-    needs: terraform-infra-prod
+    name: Terraform Plan and Apply App
+    needs: terraform-infra
     uses: ./.github/workflows/tf-apply.yaml
     with:
       deployment: app
