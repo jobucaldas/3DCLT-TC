@@ -5,6 +5,9 @@ resource "kubernetes_manifest" "operators" {
     metadata = {
       name      = "operators"
       namespace = "argocd-${var.environment}"
+      annotations = {
+        "argocd.argoproj.io/sync-wave" = "-1"
+      }
     }
     spec = {
       project = "default"
@@ -29,12 +32,16 @@ resource "kubernetes_manifest" "operators" {
 }
 
 resource "kubernetes_manifest" "togglemaster" {
+  depends_on = [kubernetes_manifest.operators]
   manifest = {
     apiVersion = "argoproj.io/v1alpha1"
     kind       = "Application"
     metadata = {
       name      = "togglemaster"
       namespace = "argocd-${var.environment}"
+      annotations = {
+        "argocd.argoproj.io/sync-wave" = "0"
+      }
     }
     spec = {
       project = "default"
