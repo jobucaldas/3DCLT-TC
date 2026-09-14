@@ -43,6 +43,9 @@ spec:
                 name: flag-service-config
             - secretRef:
                 name: flag-service-secret
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           readinessProbe:
             httpGet:
               path: /health
@@ -62,3 +65,7 @@ spec:
             limits:
               cpu: 500m
               memory: 256Mi
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi
