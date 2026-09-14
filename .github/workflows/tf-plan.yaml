@@ -20,6 +20,10 @@ on:
         required: false
         default: "infra"
         type: string
+    outputs:
+      has_changes:
+        description: "Whether terraform plan detected changes"
+        value: ${{ jobs.terraform-plan.outputs.has_changes }}
 
 permissions:
   contents: read
@@ -47,6 +51,8 @@ jobs:
     name: Terraform Plan ${{ matrix.deployment }} ${{ matrix.environment }}
     runs-on: ubuntu-latest
     needs: setup
+    outputs:
+      has_changes: ${{ steps.plan.outputs.has_changes }}
     strategy:
       fail-fast: false
       matrix:
@@ -82,6 +88,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
+        id: plan
         shell: bash
         working-directory: terraform/deployments/togglemaster-${{ matrix.deployment }}
         run: |
@@ -95,8 +102,10 @@ jobs:
             exit 1
           elif [ $code -eq 2 ]; then
             echo "Has changes for ${{ matrix.deployment }} ${{ matrix.environment }}"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           else
             echo "No changes for ${{ matrix.deployment }} ${{ matrix.environment }}"
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Save Terraform Plan
