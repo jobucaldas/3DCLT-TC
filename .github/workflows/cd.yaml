@@ -7,6 +7,7 @@ on:
 permissions:
   contents: write
   id-token: write
+  pull-requests: write
 
 jobs:
   terraform-infra:
@@ -55,6 +56,8 @@ jobs:
       - name: Sync URLs
         shell: bash
         working-directory: terraform/deployments/togglemaster-infra
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           SQS_URL=$(terraform output -raw sqs_queue_url)
           REDIS_HOST=$(terraform output -raw redis_endpoint)
@@ -80,7 +83,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add k8s/app/analytics-service/configmap.yaml k8s/app/evaluation-service/configmap.yaml k8s/app/auth-service/external-secret.yaml k8s/app/flag-service/external-secret.yaml k8s/app/targeting-service/external-secret.yaml
           git commit -m "chore(prod): sync infra urls ${{ github.sha }}"
-          git push origin HEAD:${{ github.ref_name }}
+          BRANCH="chore/prod-sync-${{ github.sha }}"
+          git checkout -b "$BRANCH"
+          git push origin "$BRANCH"
+          gh pr create --base "${{ github.ref_name }}" --head "$BRANCH" --title "chore(prod): sync infra urls ${{ github.sha }}" --body "Automated infra sync from ${{ github.sha }}" || echo "PR already exists"
 
   seed:
     name: Seed environment secrets
