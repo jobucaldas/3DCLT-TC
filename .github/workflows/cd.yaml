@@ -9,6 +9,10 @@ permissions:
   id-token: write
   pull-requests: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   terraform-infra:
     name: Terraform Plan and Apply Infra
@@ -115,9 +119,9 @@ jobs:
           yq -i '(.spec.data[] | select(.secretKey | test("^rds_")) | .remoteRef.key) = env(RDS_AUTH_ARN)'      k8s/app/auth-service/external-secret.yaml
           yq -i '(.spec.data[] | select(.secretKey | test("^rds_")) | .remoteRef.key) = env(RDS_FLAG_ARN)'      k8s/app/flag-service/external-secret.yaml
           yq -i '(.spec.data[] | select(.secretKey | test("^rds_")) | .remoteRef.key) = env(RDS_TARGETING_ARN)' k8s/app/targeting-service/external-secret.yaml
-          yq -i '.spec.target.template.data.DATABASE_URL = "postgres://{{ .rds_username }}:{{ .rds_password }}@" + env(RDS_AUTH_HOST) + ":5432/auth_db"'           k8s/app/auth-service/external-secret.yaml
-          yq -i '.spec.target.template.data.DATABASE_URL = "postgres://{{ .rds_username }}:{{ .rds_password }}@" + env(RDS_FLAG_HOST) + ":5432/flags_db"'          k8s/app/flag-service/external-secret.yaml
-          yq -i '.spec.target.template.data.DATABASE_URL = "postgres://{{ .rds_username }}:{{ .rds_password }}@" + env(RDS_TARGETING_HOST) + ":5432/targeting_db"' k8s/app/targeting-service/external-secret.yaml
+          yq -i '.spec.target.template.data.DATABASE_URL = "postgres://{{ .rds_username | urlquery }}:{{ .rds_password | urlquery }}@" + env(RDS_AUTH_HOST) + ":5432/auth_db"'           k8s/app/auth-service/external-secret.yaml
+          yq -i '.spec.target.template.data.DATABASE_URL = "postgres://{{ .rds_username | urlquery }}:{{ .rds_password | urlquery }}@" + env(RDS_FLAG_HOST) + ":5432/flags_db"'          k8s/app/flag-service/external-secret.yaml
+          yq -i '.spec.target.template.data.DATABASE_URL = "postgres://{{ .rds_username | urlquery }}:{{ .rds_password | urlquery }}@" + env(RDS_TARGETING_HOST) + ":5432/targeting_db"' k8s/app/targeting-service/external-secret.yaml
 
           if git diff --quiet -- k8s/app/analytics-service/configmap.yaml k8s/app/evaluation-service/configmap.yaml k8s/app/auth-service/external-secret.yaml k8s/app/flag-service/external-secret.yaml k8s/app/targeting-service/external-secret.yaml; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
