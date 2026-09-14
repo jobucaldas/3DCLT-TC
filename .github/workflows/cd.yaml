@@ -149,6 +149,7 @@ jobs:
           EXISTING_KEY=$(aws secretsmanager get-secret-value --secret-id togglemaster/prod/evaluation-service --query SecretString --output text 2>/dev/null | jq -r '.SERVICE_API_KEY // empty' || true)
 
           aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name togglemaster-prod-eks
+          for i in $(seq 1 30); do kubectl get namespace togglemaster-auth >/dev/null 2>&1 && break; sleep 10; done
           kubectl rollout status deployment/auth-service -n togglemaster-auth --timeout=180s
           kubectl port-forward svc/auth-service 8001:8001 -n togglemaster-auth >/tmp/pf.log 2>&1 &
           PF_PID=$!
