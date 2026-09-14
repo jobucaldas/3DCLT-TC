@@ -5,6 +5,9 @@ resource "kubernetes_manifest" "operators" {
     metadata = {
       name      = "operators"
       namespace = "argocd-${var.environment}"
+      annotations = {
+        "argocd.argoproj.io/sync-wave" = "-1"
+      }
     }
     spec = {
       project = "default"
@@ -29,19 +32,23 @@ resource "kubernetes_manifest" "operators" {
 }
 
 resource "kubernetes_manifest" "togglemaster" {
+  depends_on = [kubernetes_manifest.operators]
   manifest = {
     apiVersion = "argoproj.io/v1alpha1"
     kind       = "Application"
     metadata = {
       name      = "togglemaster"
       namespace = "argocd-${var.environment}"
+      annotations = {
+        "argocd.argoproj.io/sync-wave" = "0"
+      }
     }
     spec = {
       project = "default"
       source = {
         repoURL        = var.repo_url
         targetRevision = var.target_revision
-        path           = "k8s/app"
+        path           = "k8s"
       }
       destination = {
         server    = "https://kubernetes.default.svc"
@@ -51,6 +58,14 @@ resource "kubernetes_manifest" "togglemaster" {
         automated = {
           prune    = true
           selfHeal = true
+        }
+        retry = {
+          limit = 5
+          backoff = {
+            duration    = "5s"
+            factor      = 2
+            maxDuration = "3m"
+          }
         }
         syncOptions = ["CreateNamespace=true"]
       }
