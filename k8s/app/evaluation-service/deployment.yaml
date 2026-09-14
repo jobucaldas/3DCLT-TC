@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: evaluation-service
-          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/evaluation-service:17be56f89ba60e03d754c20f40378f5e27a43292
+          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/evaluation-service:aeb6cb4fef18927d704b14946d485e55ad10a3b6
           imagePullPolicy: Always
           securityContext:
             readOnlyRootFilesystem: true
