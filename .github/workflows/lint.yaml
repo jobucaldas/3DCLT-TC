@@ -36,7 +36,7 @@ jobs:
           output-file: kube-linter.sarif
 
       - name: Upload Kube Linter SARIF Report
-        uses: github/codeql-action/upload-sarif@v4.37.9
+        uses: github/codeql-action/upload-sarif@v4.38.0
         with:
           sarif_file: kube-linter.sarif
 
@@ -67,6 +67,6 @@ jobs:
           tflint -f sarif | tee tflint.sarif
 
       - name: Upload TFLint SARIF Report
-        uses: github/codeql-action/upload-sarif@v4.37.9
+        uses: github/codeql-action/upload-sarif@v4.38.0
         with:
           sarif_file: tflint.sarif

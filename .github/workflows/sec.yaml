@@ -61,7 +61,7 @@ jobs:
 
       - name: SARIF Upload
         if: always()
-        uses: github/codeql-action/upload-sarif@v4.37.9
+        uses: github/codeql-action/upload-sarif@v4.38.0
         with:
           sarif_file: trivy-report.json
 
@@ -84,7 +84,7 @@ jobs:
           quiet: true
 
       - name: Upload Terraform SARIF file
-        uses: github/codeql-action/upload-sarif@v4.37.9
+        uses: github/codeql-action/upload-sarif@v4.38.0
         if: always()
         with:
           sarif_file: terraform-results.sarif
@@ -111,7 +111,7 @@ jobs:
           quiet: true
 
       - name: Upload Kubernetes SARIF file
-        uses: github/codeql-action/upload-sarif@v4.37.9
+        uses: github/codeql-action/upload-sarif@v4.38.0
         if: always()
         with:
           sarif_file: kubernetes-results.sarif
@@ -135,7 +135,7 @@ jobs:
           quiet: true
 
       - name: Upload GitHub Actions SARIF file
-        uses: github/codeql-action/upload-sarif@v4.37.9
+        uses: github/codeql-action/upload-sarif@v4.38.0
         if: always()
         with:
           sarif_file: github-actions-results.sarif
