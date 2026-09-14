@@ -4,8 +4,8 @@ title = "gitleaks config"
 useDefault = true
 
 [allowlist]
-regexTarget = "match"
-description = "whitelist public and test secrets"
-regexes = [
-  '''<placeholder>''',
-]
+description = "GitOps ECR image tags are commit SHAs, not secrets"
+paths = ['''k8s/app/.*/deployment\.yaml''']
+rules = ['''generic-api-key''']
+regexTarget = "line"
+regexes = ['''image:\s+.*\.dkr\.ecr\..*\.amazonaws\.com\/.*:[0-9a-f]{40}''']

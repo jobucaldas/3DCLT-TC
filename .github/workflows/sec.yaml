@@ -23,6 +23,8 @@ jobs:
 
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v3
+        with:
+          config-path: gitleaks.toml
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
