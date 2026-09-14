@@ -99,7 +99,7 @@ jobs:
           RDS_FLAG_ARN=$(terraform output -json rds_master_secret_arns | jq -r '.["flag-service"]')
           RDS_TARGETING_ARN=$(terraform output -json rds_master_secret_arns | jq -r '.["targeting-service"]')
           export RDS_AUTH_ARN RDS_FLAG_ARN RDS_TARGETING_ARN
-          cd $GITHUB_WORKSPACE
+          cd "$GITHUB_WORKSPACE"
 
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo chmod +x /usr/local/bin/yq
           yq -i ".data.AWS_SQS_URL = \"$SQS_URL\""               k8s/app/analytics-service/configmap.yaml
@@ -138,10 +138,10 @@ jobs:
           MASTER_EXISTS=$(aws secretsmanager get-secret-value --secret-id togglemaster/prod/auth-service --query SecretString --output text 2>/dev/null | jq -r '.MASTER_KEY // empty' || true)
           SERVICE_EXISTS=$(aws secretsmanager get-secret-value --secret-id togglemaster/prod/evaluation-service --query SecretString --output text 2>/dev/null | jq -r '.SERVICE_API_KEY // empty' || true)
           if [ -n "$MASTER_EXISTS" ] && [ -n "$SERVICE_EXISTS" ]; then
-            echo "needed=false" >> $GITHUB_OUTPUT
+            echo "needed=false" >> "$GITHUB_OUTPUT"
             echo "both secrets exist, skipping seed"
           else
-            echo "needed=true" >> $GITHUB_OUTPUT
+            echo "needed=true" >> "$GITHUB_OUTPUT"
             echo "seed needed"
           fi
 
@@ -180,12 +180,12 @@ jobs:
           EXISTING_KEY=$(aws secretsmanager get-secret-value --secret-id togglemaster/prod/evaluation-service --query SecretString --output text 2>/dev/null | jq -r '.SERVICE_API_KEY // empty' || true)
 
           aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name togglemaster-prod-eks
-          for i in $(seq 1 30); do kubectl get namespace togglemaster-auth >/dev/null 2>&1 && break; sleep 10; done
+          for _ in $(seq 1 30); do kubectl get namespace togglemaster-auth >/dev/null 2>&1 && break; sleep 10; done
           kubectl rollout status deployment/auth-service -n togglemaster-auth --timeout=180s
           kubectl port-forward svc/auth-service 8001:8001 -n togglemaster-auth >/tmp/pf.log 2>&1 &
           PF_PID=$!
 
-          for i in $(seq 1 30); do curl -sf http://localhost:8001/health && break; sleep 5; done
+          for _ in $(seq 1 30); do curl -sf http://localhost:8001/health && break; sleep 5; done
           if [ -n "$EXISTING_KEY" ]; then
             if curl -sf http://localhost:8001/validate -H "Authorization: Bearer $EXISTING_KEY" >/dev/null; then
               echo "SERVICE_API_KEY already valid, skip create"
