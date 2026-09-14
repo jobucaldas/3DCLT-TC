@@ -10,7 +10,6 @@ metadata:
     checkov.io/skip3: >-
       CKV_K8S_43=The release contract uses the existing numeric image tag; digest pinning is intentionally out of scope.
 spec:
-  replicas: 1
   selector:
     matchLabels:
       app: analytics-service
