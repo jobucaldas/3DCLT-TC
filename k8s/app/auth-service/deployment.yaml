@@ -24,7 +24,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: auth-service
-          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/auth-service:a952b86c8fd8400e230cc3842e753c61f03ccf75
+          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/auth-service:7b4d3b6a77ce5c1e9c9ad90af386360064e7bcd6
           imagePullPolicy: Always
           securityContext:
             readOnlyRootFilesystem: true
