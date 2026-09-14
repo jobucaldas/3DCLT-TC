@@ -59,6 +59,14 @@ resource "kubernetes_manifest" "togglemaster" {
           prune    = true
           selfHeal = true
         }
+        retry = {
+          limit = 5
+          backoff = {
+            duration    = "5s"
+            factor      = 2
+            maxDuration = "3m"
+          }
+        }
         syncOptions = ["CreateNamespace=true"]
       }
     }
