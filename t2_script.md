@@ -244,4 +244,3 @@ Novamente vou rodar outro script pra fazer o bootstrap das flags dos servicos e 
 ```
 
 Por fim, vamos ver no DynamoDB os dados que foram processados pelos pods do evaluation service
-
