@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: analytics-service
-          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/analytics-service:d3968592dcbef41f883e44b5de40f61ab032dbcc
+          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/analytics-service:cd93997cfbf68a0c306d4922fec1a1060b45e674
           imagePullPolicy: Always
           securityContext:
             readOnlyRootFilesystem: true
