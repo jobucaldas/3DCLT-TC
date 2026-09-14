@@ -66,6 +66,8 @@ jobs:
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
 
       - name: Terraform Format
         working-directory: terraform/deployments/togglemaster-${{ matrix.deployment }}
