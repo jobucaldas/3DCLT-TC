@@ -21,6 +21,16 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+      - name: Setup kube-linter
+        run: |
+          curl -sSL https://github.com/stackrox/kube-linter/releases/latest/download/kube-linter-linux.tar.gz | tar -xz
+          sudo mv kube-linter /usr/local/bin/kube-linter
+      - uses: terraform-linters/setup-tflint@v6
+        name: Setup TFLint
+        with:
+          tflint_version: v0.64.0
       - uses: pre-commit/action@v3.0.1
   kube-lint:
     name: Lint Kubernetes
