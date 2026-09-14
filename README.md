@@ -6,7 +6,7 @@ Nesta fase, o projeto evolui da execução local para uma arquitetura conteineri
 
 ## Grupo
 
-- Gabriel Espanguero Gonzales - RM 370713
+- Gabriel Espanguero Gonzalez - RM 370713
 - João Victor Bueno de Caldas - RM 372873
 
 ## Repositórios
