@@ -18,7 +18,7 @@ jobs:
       environment: prod
     secrets: inherit
 
-  terraform-app-prod:
+  terraform-app:
     name: Terraform Plan and Apply App
     needs: terraform-infra
     uses: ./.github/workflows/tf-apply.yaml
@@ -27,11 +27,43 @@ jobs:
       environment: prod
     secrets: inherit
 
+  check-apps:
+    name: Check ArgoCD apps healthy
+    runs-on: ubuntu-latest
+    needs: terraform-app
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Wait for ArgoCD apps Synced Healthy
+        shell: bash
+        run: |
+          aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name togglemaster-prod-eks
+          for app in operators togglemaster; do
+            echo "waiting for $app";
+            for i in $(seq 1 60); do
+              SYNC=$(kubectl get application $app -n argocd-prod -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "");
+              HEALTH=$(kubectl get application $app -n argocd-prod -o jsonpath='{.status.health.status}' 2>/dev/null || echo "");
+              echo "$app sync=$SYNC health=$HEALTH attempt $i/60";
+              if [ "$SYNC" = "Synced" ] && [ "$HEALTH" = "Healthy" ]; then break; fi;
+              sleep 10;
+            done;
+            SYNC=$(kubectl get application $app -n argocd-prod -o jsonpath='{.status.sync.status}' 2>/dev/null || echo "");
+            HEALTH=$(kubectl get application $app -n argocd-prod -o jsonpath='{.status.health.status}' 2>/dev/null || echo "");
+            if [ "$SYNC" != "Synced" ] || [ "$HEALTH" != "Healthy" ]; then echo "$app not ready: sync=$SYNC health=$HEALTH"; kubectl describe application $app -n argocd-prod | tail -n 100; exit 1; fi;
+          done
+          for ns in togglemaster-auth togglemaster-flag togglemaster-targeting togglemaster-evaluation togglemaster-analytics; do
+            for i in $(seq 1 30); do kubectl get ns $ns >/dev/null 2>&1 && break; echo "waiting ns $ns $i/30"; sleep 10; done;
+            kubectl get ns $ns;
+          done
+
   sync:
     name: Sync infra to k8s environment
     runs-on: ubuntu-latest
-    needs: terraform-app-prod
-    environment: prod
+    needs: check-apps
     steps:
       - uses: actions/checkout@v7
         with:
@@ -92,7 +124,6 @@ jobs:
     name: Seed environment secrets
     runs-on: ubuntu-latest
     needs: sync
-    environment: prod
     steps:
       - uses: aws-actions/configure-aws-credentials@v6
         with:
