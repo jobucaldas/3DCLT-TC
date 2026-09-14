@@ -33,18 +33,15 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     outputs:
-      environments: ${{ steps.set.outputs.environments }}
-      deployments: ${{ steps.set.outputs.deployments }}
+      matrix: ${{ steps.set.outputs.matrix }}
     steps:
       - id: set
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo 'environments=["dev","prod"]' >> "$GITHUB_OUTPUT"
-            echo 'deployments=["infra","app"]' >> "$GITHUB_OUTPUT"
+            echo 'matrix={"include":[{"environment":"dev","deployment":"infra"},{"environment":"prod","deployment":"infra"},{"environment":"prod","deployment":"app"}]}' >> "$GITHUB_OUTPUT"
           else
-            echo 'environments=["${{ inputs.environment }}"]' >> "$GITHUB_OUTPUT"
-            echo 'deployments=["${{ inputs.deployment }}"]' >> "$GITHUB_OUTPUT"
+            echo 'matrix={"include":[{"environment":"${{ inputs.environment }}","deployment":"${{ inputs.deployment }}"}]}' >> "$GITHUB_OUTPUT"
           fi
 
   terraform-plan:
@@ -55,9 +52,7 @@ jobs:
       has_changes: ${{ steps.plan.outputs.has_changes }}
     strategy:
       fail-fast: false
-      matrix:
-        environment: ${{ fromJson(needs.setup.outputs.environments) }}
-        deployment: ${{ fromJson(needs.setup.outputs.deployments) }}
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v7
         with:
