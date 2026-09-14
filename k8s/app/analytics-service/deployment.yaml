@@ -23,6 +23,7 @@ spec:
       automountServiceAccountToken: true
       securityContext:
         runAsNonRoot: true
+        fsGroup: 10000
         seccompProfile:
           type: RuntimeDefault
       containers:

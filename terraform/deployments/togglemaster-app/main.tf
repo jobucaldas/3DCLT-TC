@@ -41,7 +41,7 @@ resource "kubernetes_manifest" "togglemaster" {
       source = {
         repoURL        = var.repo_url
         targetRevision = var.target_revision
-        path           = "k8s/app"
+        path           = "k8s"
       }
       destination = {
         server    = "https://kubernetes.default.svc"
