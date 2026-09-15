@@ -22,4 +22,5 @@ Observações:
 - Adicionamos steps no CI para preencher os secrets criados pelo terraform de forma procedural.
 
 Custo durante o periodo de realização do trabalho: 
-<img width="2559" height="1269" alt="image" src="https://github.com/user-attachments/assets/bb566857-5cc9-41b4-8cc7-b154634b4f50" />
+<img width="2558" height="1269" alt="image" src="https://github.com/user-attachments/assets/7ac5710e-663d-4263-a5a1-37c57c4a7c31" />
+
