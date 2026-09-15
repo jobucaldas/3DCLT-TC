@@ -49,6 +49,7 @@ jobs:
 
   destroy-infra:
     name: Terraform Destroy Infra (${{ inputs.environment }})
+    needs: destroy-app
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
