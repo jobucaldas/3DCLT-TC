@@ -24,7 +24,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: flag-service
-          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/flag-service:ae27e091dd3e22328357515946a0fc79c85577b1
+          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/flag-service:16da3614767f089f449e4e6954e1e084d6135d40
           imagePullPolicy: Always
           securityContext:
             readOnlyRootFilesystem: true
