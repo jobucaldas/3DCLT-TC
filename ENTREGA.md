@@ -17,6 +17,6 @@ Vídeo:[https://youtu.be/iMdWhg4UhBo](https://www.youtube.com/watch?v=-ntulwAAza
 
 Observações: 
 
-- Escolhemos o cloudflare r2 pra ser independente da aplicação e poder mudar de conta com mais facilidade
-- Aplicamos o terraform em camadas para o argocd subir apenas com o cluster em pé, mas ainda automaticamente
-- Adicionamos steps no ci pra preencher os secrets criados pelo terraform de forma procedural
+- Escolhemos o cloudflare r2 para ser independente da aplicação e poder mudar de conta com mais facilidade.
+- Aplicamos o terraform em camadas para o ArgoCD subir apenas com o cluster em pé, mas ainda automaticamente.
+- Adicionamos steps no CI para preencher os secrets criados pelo terraform de forma procedural.
