@@ -24,7 +24,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: targeting-service
-          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/targeting-service:f98125c654b641f35d33424aab084a1f504e8d53
+          image: 762846202773.dkr.ecr.us-east-1.amazonaws.com/targeting-service:84e3b6c9debabdd69656f8f1bb8d1b75e47e492c
           imagePullPolicy: Always
           securityContext:
             readOnlyRootFilesystem: true
