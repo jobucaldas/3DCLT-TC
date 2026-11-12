@@ -4,4 +4,7 @@ resources:
 - external-secrets.yaml
 - ingress-nginx.yaml
 - keda.yaml
+- kube-prometheus-stack.yaml
+- loki.yaml
+- otel-collector.yaml
 - metrics-server.yaml

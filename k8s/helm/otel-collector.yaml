@@ -1,0 +1,94 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: otel-collector
+  namespace: argocd-prod
+spec:
+  project: default
+  source:
+    repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+    chart: opentelemetry-collector
+    targetRevision: 0.178.3
+    helm:
+      valuesObject:
+        fullnameOverride: otel-collector
+        mode: daemonset
+        image:
+          repository: otel/opentelemetry-collector-contrib
+        service:
+          enabled: true
+        ports:
+          jaeger-compact:
+            enabled: false
+          jaeger-thrift:
+            enabled: false
+          jaeger-grpc:
+            enabled: false
+          zipkin:
+            enabled: false
+        presets:
+          logsCollection:
+            enabled: true
+            includeCollectorLogs: false
+          kubernetesAttributes:
+            enabled: true
+        extraEnvs:
+        - name: NEW_RELIC_LICENSE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: newrelic-license
+              key: NEW_RELIC_LICENSE_KEY
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+        config:
+          receivers:
+            otlp:
+              protocols:
+                grpc:
+                  endpoint: ${env:MY_POD_IP}:4317
+                http:
+                  endpoint: ${env:MY_POD_IP}:4318
+          connectors:
+            spanmetrics:
+              dimensions:
+              - name: http.response.status_code
+              - name: http.status_code
+          exporters:
+            otlphttp/loki:
+              endpoint: http://loki.monitoring.svc.cluster.local:3100/otlp
+            prometheusremotewrite:
+              endpoint: http://kps-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+              resource_to_telemetry_conversion:
+                enabled: true
+            otlp/newrelic:
+              endpoint: otlp.nr-data.net:4317
+              headers:
+                api-key: ${env:NEW_RELIC_LICENSE_KEY}
+          service:
+            pipelines:
+              traces:
+                receivers: [otlp]
+                processors: [memory_limiter, k8sattributes, batch]
+                exporters: [spanmetrics, otlp/newrelic]
+              metrics:
+                receivers: [otlp, spanmetrics]
+                processors: [memory_limiter, k8sattributes, batch]
+                exporters: [prometheusremotewrite]
+              logs:
+                receivers: [otlp]
+                processors: [memory_limiter, k8sattributes, batch]
+                exporters: [otlphttp/loki]
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
