@@ -18,5 +18,5 @@ variable "repo_url" {
 
 variable "target_revision" {
   type    = string
-  default = "t3"
+  default = "t4"
 }
