@@ -110,3 +110,10 @@ jobs:
         with:
           name: terraform-plan-${{ matrix.deployment }}-${{ matrix.environment }}
           path: terraform/deployments/togglemaster-${{ matrix.deployment }}/tfplan
+
+      - name: Save Lambda package
+        if: matrix.deployment == 'app'
+        uses: actions/upload-artifact@v7
+        with:
+          name: self-healing-lambda-${{ matrix.environment }}
+          path: terraform/modules/self-healing/lambda/handler.zip

@@ -7,6 +7,11 @@ variable "environment" {
   type = string
 }
 
+variable "project_name" {
+  type    = string
+  default = "togglemaster"
+}
+
 variable "cluster_name" {
   type = string
 }
