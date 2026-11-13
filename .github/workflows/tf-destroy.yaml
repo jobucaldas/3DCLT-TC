@@ -1,16 +1,15 @@
 name: Terraform Destroy
 
 on:
-  # checkov:skip=CKV_GHA_7:Constrained dev/prod input selects the protected GitHub environment and matching Terraform tfvars file.
+  # checkov:skip=CKV_GHA_7:Constrained input selects the protected GitHub environment and matching Terraform tfvars file.
   workflow_dispatch:
     inputs:
       environment:
         description: "The environment to deploy to"
         required: false
-        default: "dev"
+        default: "prod"
         type: choice
         options:
-          - dev
           - prod
 
 permissions:

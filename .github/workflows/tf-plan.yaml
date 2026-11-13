@@ -11,9 +11,9 @@ on:
   workflow_call:
     inputs:
       environment:
-        description: "Terraform environment to deploy to: dev or prod"
+        description: "Terraform environment to deploy to"
         required: false
-        default: "dev"
+        default: "prod"
         type: string
       deployment:
         description: "Terraform deployment to run: infra or app"
@@ -40,7 +40,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo 'matrix={"include":[{"environment":"dev","deployment":"infra"},{"environment":"prod","deployment":"infra"},{"environment":"prod","deployment":"app"}]}' >> "$GITHUB_OUTPUT"
+            echo 'matrix={"include":[{"environment":"prod","deployment":"infra"},{"environment":"prod","deployment":"app"}]}' >> "$GITHUB_OUTPUT"
           else
             echo 'matrix={"include":[{"environment":"${{ inputs.environment }}","deployment":"${{ inputs.deployment }}"}]}' >> "$GITHUB_OUTPUT"
           fi
@@ -107,7 +107,7 @@ jobs:
             "<!-- tf-plan-${{ matrix.deployment }}-${{ matrix.environment }} -->" \
             "### Terraform Plan ${{ matrix.deployment }} ${{ matrix.environment }}" \
             "" \
-            "Plan ignorado: o cluster togglemaster-${{ matrix.environment }}-eks não existe. Suba o ambiente pelo pipeline de CD e rode este check de novo." \
+            "Plan não executado: o ambiente demo não existe (cluster togglemaster-${{ matrix.environment }}-eks não encontrado). O check fica vermelho até o ambiente subir. Rode o pipeline Deploy Demo Environment e execute este check de novo." \
             > "$RUNNER_TEMP/comment.md"
 
       - name: Terraform Plan
@@ -172,6 +172,12 @@ jobs:
           else
             gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@"$RUNNER_TEMP/comment.md" > /dev/null
           fi
+
+      - name: Fail without demo environment
+        if: steps.cluster.outputs.exists == 'false'
+        run: |
+          echo "::error::Ambiente demo não existe. Rode o pipeline Deploy Demo Environment e execute este check de novo."
+          exit 1
 
       - name: Save Terraform Plan
         if: steps.cluster.outputs.exists != 'false'
