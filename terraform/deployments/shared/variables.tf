@@ -24,7 +24,7 @@ variable "location" {
 variable "environments" {
   description = "Environments where states will be kept"
   type        = set(string)
-  default     = ["shared", "dev", "prod"]
+  default     = ["shared", "prod"]
 }
 
 variable "aws_region" {
