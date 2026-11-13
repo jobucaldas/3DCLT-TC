@@ -28,6 +28,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  pull-requests: write
 
 jobs:
   setup:
@@ -84,8 +85,34 @@ jobs:
         working-directory: terraform/deployments/togglemaster-${{ matrix.deployment }}
         run: terraform validate
 
+      - name: Check EKS cluster
+        id: cluster
+        if: github.event_name == 'pull_request' && matrix.deployment == 'app'
+        shell: bash
+        run: |
+          if out=$(aws eks describe-cluster --name togglemaster-${{ matrix.environment }}-eks 2>&1); then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          elif echo "$out" | grep -q ResourceNotFoundException; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$out"
+            exit 1
+          fi
+
+      - name: Build skipped plan comment
+        if: steps.cluster.outputs.exists == 'false'
+        shell: bash
+        run: |
+          printf '%s\n' \
+            "<!-- tf-plan-${{ matrix.deployment }}-${{ matrix.environment }} -->" \
+            "### Terraform Plan ${{ matrix.deployment }} ${{ matrix.environment }}" \
+            "" \
+            "Plan ignorado: o cluster togglemaster-${{ matrix.environment }}-eks não existe. Suba o ambiente pelo pipeline de CD e rode este check de novo." \
+            > "$RUNNER_TEMP/comment.md"
+
       - name: Terraform Plan
         id: plan
+        if: steps.cluster.outputs.exists != 'false'
         shell: bash
         working-directory: terraform/deployments/togglemaster-${{ matrix.deployment }}
         run: |
@@ -105,7 +132,49 @@ jobs:
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Build plan comment
+        if: github.event_name == 'pull_request' && steps.plan.outcome == 'success'
+        shell: bash
+        working-directory: terraform/deployments/togglemaster-${{ matrix.deployment }}
+        run: |
+          terraform show -json tfplan | jq -r \
+            --arg title "Terraform Plan ${{ matrix.deployment }} ${{ matrix.environment }}" \
+            --arg marker "<!-- tf-plan-${{ matrix.deployment }}-${{ matrix.environment }} -->" '
+            def acao:
+              if . == ["create"] then "Criar"
+              elif . == ["update"] then "Modificar"
+              elif . == ["delete"] then "Destruir"
+              elif sort == ["create", "delete"] then "Recriar"
+              else join("+") end;
+            [.resource_changes[]? | select(.change.actions != ["no-op"] and .change.actions != ["read"])] as $c
+            | [$c[] | .change.actions | acao] as $l
+            | "\($marker)\n### \($title)\n\n" +
+              if ($l | length) == 0 then "Sem mudanças na infraestrutura."
+              else
+                "Criar: \($l | map(select(. == "Criar")) | length), Modificar: \($l | map(select(. == "Modificar")) | length), Destruir: \($l | map(select(. == "Destruir")) | length), Recriar: \($l | map(select(. == "Recriar")) | length)\n\n| Ação | Recurso |\n|---|---|\n" +
+                ($c[:200] | map("| \(.change.actions | acao) | `\(.address)` |") | join("\n")) +
+                (if ($c | length) > 200 then "\n\n... e mais \($c | length - 200) recursos." else "" end)
+              end
+          ' > "$RUNNER_TEMP/comment.md"
+
+      - name: Post PR comment
+        if: github.event_name == 'pull_request' && (steps.cluster.outputs.exists == 'false' || steps.plan.outcome == 'success')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          marker="<!-- tf-plan-${{ matrix.deployment }}-${{ matrix.environment }} -->"
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id" | head -n1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@"$RUNNER_TEMP/comment.md" > /dev/null
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@"$RUNNER_TEMP/comment.md" > /dev/null
+          fi
+
       - name: Save Terraform Plan
+        if: steps.cluster.outputs.exists != 'false'
         uses: actions/upload-artifact@v7
         with:
           name: terraform-plan-${{ matrix.deployment }}-${{ matrix.environment }}
