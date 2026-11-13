@@ -165,13 +165,18 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           marker="<!-- tf-plan-${{ matrix.deployment }}-${{ matrix.environment }} -->"
-          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
-            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id" | head -n1)
-          if [ -n "$id" ]; then
-            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@"$RUNNER_TEMP/comment.md" > /dev/null
-          else
-            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@"$RUNNER_TEMP/comment.md" > /dev/null
-          fi
+          printf '\n\nCommit: %s\n' "${{ github.event.pull_request.head.sha }}" >> "$RUNNER_TEMP/comment.md"
+          old=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id")
+          gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@"$RUNNER_TEMP/comment.md" > /dev/null
+          for id in $old; do
+            body=$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$id" --jq .body)
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" \
+              -f body="$(printf '> **Desatualizado:** há um plan mais novo neste PR.\n\n%s' "$body")" > /dev/null
+            node=$(gh api "repos/$GITHUB_REPOSITORY/issues/comments/$id" --jq .node_id)
+            gh api graphql -f id="$node" -f query="mutation(\$id: ID!) { minimizeComment(input: {subjectId: \$id, classifier: OUTDATED}) { minimizedComment { isMinimized } } }" > /dev/null \
+              || echo "::warning::não foi possível minimizar o comentário $id"
+          done
 
       - name: Fail without demo environment
         if: steps.cluster.outputs.exists == 'false'
