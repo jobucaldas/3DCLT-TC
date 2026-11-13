@@ -62,7 +62,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (service_name) (rate(traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\",status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum by (service_name) (rate(traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\"}[5m]))",
+          "expr": "((sum by (service_name) (rate(traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\",http_response_status_code=~\"5..\"}[5m]))) or (sum by (service_name) (rate(traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\",http_status_code=~\"5..\"}[5m])))) / sum by (service_name) (rate(traces_span_metrics_calls_total{span_kind=\"SPAN_KIND_SERVER\"}[5m]))",
           "legendFormat": "{{service_name}}"
         }
       ]

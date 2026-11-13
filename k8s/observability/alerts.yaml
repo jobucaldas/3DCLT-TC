@@ -7,16 +7,42 @@ spec:
   groups:
     - name: togglemaster
       rules:
-        - alert: AuthServiceHighErrorRate
+        - alert: ServiceHighErrorRate
           expr: |
-            sum(rate(traces_span_metrics_calls_total{service_name="auth-service",span_kind="SPAN_KIND_SERVER",status_code="STATUS_CODE_ERROR"}[5m]))
+            (
+              sum by (service_name) (rate(traces_span_metrics_calls_total{span_kind="SPAN_KIND_SERVER",http_response_status_code=~"5.."}[5m]))
+              or
+              sum by (service_name) (rate(traces_span_metrics_calls_total{span_kind="SPAN_KIND_SERVER",http_status_code=~"5.."}[5m]))
+            )
             /
-            sum(rate(traces_span_metrics_calls_total{service_name="auth-service",span_kind="SPAN_KIND_SERVER"}[5m]))
+            sum by (service_name) (rate(traces_span_metrics_calls_total{span_kind="SPAN_KIND_SERVER"}[5m]))
             > 0.05
           for: 2m
           labels:
             severity: critical
-            service: auth-service
           annotations:
-            summary: "auth-service com mais de 5% de erros 5xx"
+            summary: "{{ $labels.service_name }} com mais de 5% de erros 5xx"
             description: "Taxa de erro atual: {{ $value | humanizePercentage }}"
+        - alert: ServiceHighLatency
+          expr: |
+            histogram_quantile(0.95, sum by (service_name, le) (rate(traces_span_metrics_duration_milliseconds_bucket{span_kind="SPAN_KIND_SERVER"}[5m]))) > 1000
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.service_name }} com p95 acima de 1s"
+            description: "p95 atual: {{ $value | humanize }} ms"
+        - alert: PodRestartingFrequently
+          expr: increase(kube_pod_container_status_restarts_total{namespace=~"togglemaster.*"}[15m]) > 3
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} reiniciou mais de 3 vezes em 15m"
+        - alert: PodNotReady
+          expr: sum by (namespace, pod) (kube_pod_status_ready{namespace=~"togglemaster.*",condition="false"}) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} nao esta Ready ha 5 minutos"
