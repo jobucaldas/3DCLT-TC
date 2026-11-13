@@ -10,6 +10,7 @@ CLUSTER = os.environ.get("CLUSTER_NAME", "")
 ENDPOINT = os.environ.get("CLUSTER_ENDPOINT", "")
 CA = os.environ.get("CLUSTER_CA", "")
 TOKEN = os.environ.get("WEBHOOK_TOKEN", "")
+DB_INSTANCE = os.environ.get("DB_INSTANCE_ID", "")
 COOLDOWN = 600
 NAMESPACE = "togglemaster-auth"
 DEPLOYMENT = "auth-service"
@@ -60,6 +61,19 @@ def kube(method, token, body=None):
         return json.loads(resp.read())
 
 
+def db_status():
+    import boto3
+
+    rds = boto3.client("rds")
+    return rds.describe_db_instances(DBInstanceIdentifier=DB_INSTANCE)["DBInstances"][0]["DBInstanceStatus"]
+
+
+def start_db():
+    import boto3
+
+    boto3.client("rds").start_db_instance(DBInstanceIdentifier=DB_INSTANCE)
+
+
 def recently_restarted(deployment):
     stamp = deployment["spec"]["template"]["metadata"].get("annotations", {}).get(ANNOTATION)
     if not stamp:
@@ -91,11 +105,17 @@ def handler(event, context):
         return reply(200, {"restarted": False, "motivo": f"ignorado: {name} {service} {alert.get('status')}"})
 
     try:
+        status = db_status() if DB_INSTANCE else "available"
+        if status == "stopped":
+            start_db()
+            return reply(200, {"restarted": False, "db_started": True, "db": DB_INSTANCE})
+        if status != "available":
+            return reply(200, {"restarted": False, "motivo": f"banco {DB_INSTANCE} esta {status}"})
         token = eks_token()
         if recently_restarted(kube("GET", token)):
             return reply(200, {"restarted": False, "motivo": f"{DEPLOYMENT} reiniciado ha menos de {COOLDOWN}s"})
         agora = datetime.now(timezone.utc).isoformat()
         kube("PATCH", token, {"spec": {"template": {"metadata": {"annotations": {ANNOTATION: agora}}}}})
     except Exception as exc:
-        return reply(500, {"error": f"falha ao reiniciar {DEPLOYMENT}: {exc}"})
+        return reply(500, {"error": f"falha ao curar {DEPLOYMENT}: {exc}"})
     return reply(200, {"restarted": True, "deployment": f"{NAMESPACE}/{DEPLOYMENT}"})

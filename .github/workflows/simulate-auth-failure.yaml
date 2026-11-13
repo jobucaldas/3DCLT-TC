@@ -1,0 +1,59 @@
+name: Simulate Auth Failure
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NAMESPACE: togglemaster-auth
+  DB_INSTANCE: togglemaster-prod-auth-service-db
+  DURATION: "1200"
+
+jobs:
+  simulate:
+    name: Stop the auth database and send load
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Stop the auth database
+        shell: bash
+        run: aws rds stop-db-instance --db-instance-identifier "$DB_INSTANCE" > /dev/null || true
+
+      - name: Send load to /admin/keys
+        shell: bash
+        run: |
+          aws eks update-kubeconfig --region ${{ vars.AWS_REGION }} --name togglemaster-prod-eks
+          pod="failure-load-${{ github.run_id }}"
+          trap 'kubectl delete pod "$pod" -n "$NAMESPACE" --ignore-not-found --wait=false' EXIT
+          master_key=$(kubectl get secret auth-service-secret -n "$NAMESPACE" -o jsonpath='{.data.MASTER_KEY}' | base64 -d)
+          echo "::add-mask::$master_key"
+          kubectl run "$pod" -n "$NAMESPACE" --image=curlimages/curl:8.11.1 --restart=Never --command -- sleep $((DURATION + 300))
+          kubectl wait "pod/$pod" -n "$NAMESPACE" --for=condition=Ready --timeout=180s
+          cat > "$RUNNER_TEMP/load.sh" <<'SCRIPT'
+          END=$(( $(date +%s) + DURATION ))
+          worker() {
+            while [ "$(date +%s)" -lt "$END" ]; do
+              curl -s -m 150 -o /dev/null -w "%{http_code}\n" -X POST http://auth-service.togglemaster-auth.svc.cluster.local:8001/admin/keys \
+                -H "Authorization: Bearer $MASTER_KEY" -H "Content-Type: application/json" -d "{\"name\":\"demo-failure\"}"
+              sleep 0.2
+            done
+          }
+          {
+            for _ in $(seq 1 20); do worker & done
+            wait
+          } | sort | uniq -c
+          SCRIPT
+          counts=$({ printf 'MASTER_KEY=%s\nDURATION=%s\n' "$master_key" "$DURATION"; cat "$RUNNER_TEMP/load.sh"; } | kubectl exec -i "$pod" -n "$NAMESPACE" -- sh)
+          {
+            echo "Respostas de POST /admin/keys por codigo HTTP (000 = sem resposta em 150 s):"
+            echo '```text'
+            echo "$counts"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
