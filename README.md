@@ -140,6 +140,16 @@ curl "http://localhost:8004/evaluate?user_id=user-123&flag_name=enable-new-dashb
 curl "http://localhost:8004/evaluate?user_id=user-123&flag_name=gradual-checkout"
 ```
 
+Veja a observabilidade local (depois de fazer algumas requisições acima):
+
+| O que | Onde |
+| --- | --- |
+| Traces | http://localhost:16686 (Jaeger) |
+| Alertas e métricas | http://localhost:9090 (Prometheus) |
+| Dashboard | http://localhost:3000 (Grafana) |
+
+No local, os logs e as métricas de CPU e memória do dashboard ficam vazios. Eles só existem no cluster.
+
 ## Infraestrutura AWS
 
 A infraestrutura da Fase 3 fica em `terraform/deployments/togglemaster-infra` e cria:

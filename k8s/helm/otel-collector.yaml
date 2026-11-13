@@ -38,6 +38,7 @@ spec:
             secretKeyRef:
               name: newrelic-license
               key: NEW_RELIC_LICENSE_KEY
+              optional: true
         resources:
           requests:
             cpu: 50m

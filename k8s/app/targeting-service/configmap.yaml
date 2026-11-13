@@ -5,3 +5,6 @@ metadata:
 data:
   PORT: "8003"
   AUTH_SERVICE_URL: "http://auth-service.togglemaster-auth.svc.cluster.local:8001"
+  OTEL_SERVICE_NAME: "targeting-service"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.monitoring.svc.cluster.local:4318"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"

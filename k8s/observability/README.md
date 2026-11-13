@@ -11,9 +11,10 @@ Sobe Prometheus, Loki, Grafana e OTel Collector no cluster. O ArgoCD instala tud
 
 ## Passo a passo
 
-1. Crie 2 secrets no AWS Secrets Manager:
+1. Crie 3 secrets no AWS Secrets Manager:
    - `togglemaster/prod/grafana` com `admin-user` e `admin-password`
    - `togglemaster/prod/newrelic` com `NEW_RELIC_LICENSE_KEY`
+   - `togglemaster/prod/jsm` com `api_key` (chave da integração Prometheus do Jira Service Management)
 2. Faça o push da branch. O ArgoCD aplica sozinho.
 3. Confira se os pods subiram:
    ```bash
@@ -31,7 +32,7 @@ Sobe Prometheus, Loki, Grafana e OTel Collector no cluster. O ArgoCD instala tud
 Configure em cada serviço:
 
 ```text
-OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector.monitoring.svc.cluster.local:4317
+OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector.monitoring.svc.cluster.local:4318
 OTEL_SERVICE_NAME=<nome-do-servico>
 ```
 

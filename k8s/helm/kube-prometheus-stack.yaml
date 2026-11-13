@@ -14,7 +14,33 @@ spec:
         fullnameOverride: kps
         alertmanager:
           enabled: true
+          config:
+            route:
+              receiver: "null"
+              group_by: [alertname, service_name]
+              group_wait: 30s
+              group_interval: 5m
+              repeat_interval: 4h
+              routes:
+              - receiver: "null"
+                matchers:
+                - alertname =~ "Watchdog|InfoInhibitor"
+              - receiver: jsm
+                matchers:
+                - severity =~ "critical|warning"
+            receivers:
+            - name: "null"
+            - name: jsm
+              opsgenie_configs:
+              - api_key_file: /etc/alertmanager/secrets/jsm-api-key/api_key
+                api_url: https://api.atlassian.com/jsm/ops/integration/
+                message: '{{ .CommonAnnotations.summary }}'
+                description: '{{ .CommonAnnotations.description }}'
+                priority: '{{ if eq .CommonLabels.severity "critical" }}P1{{ else }}P3{{ end }}'
+                send_resolved: true
           alertmanagerSpec:
+            secrets:
+            - jsm-api-key
             resources:
               requests:
                 cpu: 10m
