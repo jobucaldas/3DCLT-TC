@@ -72,3 +72,13 @@ resource "kubernetes_manifest" "togglemaster" {
     }
   }
 }
+
+module "self_healing" {
+  source = "../../modules/self-healing"
+
+  project_name     = var.project_name
+  environment      = var.environment
+  cluster_name     = var.cluster_name
+  cluster_endpoint = data.aws_eks_cluster.main.endpoint
+  cluster_ca       = data.aws_eks_cluster.main.certificate_authority[0].data
+}
