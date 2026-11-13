@@ -81,4 +81,6 @@ module "self_healing" {
   cluster_name     = var.cluster_name
   cluster_endpoint = data.aws_eks_cluster.main.endpoint
   cluster_ca       = data.aws_eks_cluster.main.certificate_authority[0].data
+
+  db_instance_identifier = "${var.project_name}-${var.environment}-auth-service-db"
 }
