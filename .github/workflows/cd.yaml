@@ -2,7 +2,7 @@ name: Continuous Deployment
 
 on:
   push:
-    branches: [main, t2, t3]
+    branches: [main, t2, t3, t4]
 
 permissions:
   contents: write
