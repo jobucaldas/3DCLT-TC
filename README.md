@@ -59,7 +59,6 @@ Na AWS, os serviços rodam em um cluster EKS. As dependências de dados são ext
   buildImages.sh
   setupServices.sh
   migrateDB.sh
-  k8sBootstrap.sh
   k8s/
     app/
       auth-service/
@@ -240,21 +239,7 @@ O script aplica os arquivos `db/init.sql` dos serviços:
 - `flag-service`
 - `targeting-service`
 
-## Bootstrap e smoke tests no cluster
-
-Depois da infraestrutura, imagens, secrets e migrações, execute:
-
-```bash
-API_KEY="tm_key_..." ./k8sBootstrap.sh
-```
-
-O script:
-
-- aplica service accounts com IRSA para `evaluation-service` e `analytics-service`
-- força sincronização dos ExternalSecrets
-- reinicia os pods para recarregar variáveis de ambiente
-- cria flags e regras de demonstração via Ingress
-- imprime comandos de smoke test, carga e validação de SQS/DynamoDB
+## Smoke tests no cluster
 
 Rotas esperadas via Ingress:
 
