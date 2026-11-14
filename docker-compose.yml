@@ -2,7 +2,8 @@ x-otel: &otel
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
   OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
   OTEL_METRICS_EXPORTER: none
-  OTEL_LOGS_EXPORTER: none
+  OTEL_LOGS_EXPORTER: otlp
+  OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
 
 services:
   analytics-service:
@@ -166,6 +167,9 @@ services:
                 endpoint: 0.0.0.0:4318
         processors:
           batch: {}
+          resource/local:
+            attributes:
+              - {key: k8s.namespace.name, value: togglemaster-local, action: insert}
         connectors:
           spanmetrics:
             dimensions:
@@ -176,6 +180,8 @@ services:
             endpoint: jaeger:4317
             tls:
               insecure: true
+          otlphttp/loki:
+            endpoint: http://loki:3100/otlp
           prometheus:
             endpoint: 0.0.0.0:8889
             resource_to_telemetry_conversion:
@@ -189,6 +195,10 @@ services:
             metrics:
               receivers: [spanmetrics]
               exporters: [prometheus]
+            logs:
+              receivers: [otlp]
+              processors: [resource/local, batch]
+              exporters: [otlphttp/loki]
     ports:
       - "4318:4318"
 
@@ -196,6 +206,9 @@ services:
     image: docker.io/jaegertracing/all-in-one:1.62.0
     ports:
       - "16686:16686"
+
+  loki:
+    image: docker.io/grafana/loki:3.5.3
 
   prometheus:
     image: docker.io/prom/prometheus:v3.5.0
@@ -224,6 +237,7 @@ services:
         mkdir -p /tmp/prov/datasources /tmp/prov/dashboards
         printf '%s\n' 'apiVersion: 1' 'datasources:' \
           '  - {name: Prometheus, uid: prometheus, type: prometheus, access: proxy, url: "http://prometheus:9090", isDefault: true}' \
+          '  - {name: Loki, uid: loki, type: loki, access: proxy, url: "http://loki:3100"}' \
           > /tmp/prov/datasources/ds.yml
         printf '%s\n' 'apiVersion: 1' 'providers:' \
           '  - {name: togglemaster, type: file, options: {path: /var/lib/grafana/dashboards}}' \
