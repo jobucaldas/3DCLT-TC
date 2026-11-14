@@ -110,7 +110,7 @@ def handler(event, context):
             start_db()
             return reply(200, {"restarted": False, "db_started": True, "db": DB_INSTANCE})
         if status != "available":
-            return reply(200, {"restarted": False, "motivo": f"banco {DB_INSTANCE} esta {status}"})
+            return reply(503, {"restarted": False, "motivo": f"banco {DB_INSTANCE} esta {status}, tente de novo"})
         token = eks_token()
         if recently_restarted(kube("GET", token)):
             return reply(200, {"restarted": False, "motivo": f"{DEPLOYMENT} reiniciado ha menos de {COOLDOWN}s"})
