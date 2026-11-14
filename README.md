@@ -1,8 +1,8 @@
-# Tech Challenge - Fase 3
+# Tech Challenge - Fase 4
 
-Repositório principal da entrega da Fase 3 do projeto **ToggleMaster**, uma plataforma de feature flags baseada em microsserviços.
+Repositório principal do **ToggleMaster**, uma plataforma de feature flags baseada em microsserviços.
 
-Nesta fase, o projeto evolui da execução local para uma arquitetura conteinerizada em Kubernetes, com infraestrutura provisionada na AWS por Terraform/OpenTofu, uso de serviços gerenciados e automação de deploy, migração e validação.
+Esse repositório inclui a infraestrutura como código (Terraform), os manifests Kubernetes (ArgoCD), a stack de observabilidade, o lambda de self-healing, os pipelines de CI/CD e o ambiente para desenvolvimento local (Docker Compose).
 
 ## Grupo
 
@@ -11,14 +11,14 @@ Nesta fase, o projeto evolui da execução local para uma arquitetura conteineri
 
 ## Repositórios
 
-- [3DCLT-TC](https://github.com/jobucaldas/3DCLT-TC/tree/t3) - infraestrutura, manifests Kubernetes, Docker Compose e scripts de operação
-- [auth-service](https://github.com/jobucaldas/auth-service/tree/t3) - autenticação e emissão/validação de API keys
-- [flag-service](https://github.com/jobucaldas/flag-service/tree/t3) - cadastro e manutenção das feature flags
-- [targeting-service](https://github.com/jobucaldas/targeting-service/tree/t3) - regras de segmentação das flags
-- [evaluation-service](https://github.com/jobucaldas/evaluation-service/tree/t3) - avaliação das flags com cache Redis e envio de eventos para SQS
-- [analytics-service](https://github.com/jobucaldas/analytics-service/tree/t3) - consumo de eventos da SQS e gravação no DynamoDB
+- [3DCLT-TC](https://github.com/jobucaldas/3DCLT-TC/tree/t4) - infraestrutura, manifests Kubernetes, Docker Compose e scripts de operação
+- [auth-service](https://github.com/jobucaldas/auth-service/tree/t4) - autenticação e emissão/validação de API keys
+- [flag-service](https://github.com/jobucaldas/flag-service/tree/t4) - cadastro e manutenção das feature flags
+- [targeting-service](https://github.com/jobucaldas/targeting-service/tree/t4) - regras de segmentação das flags
+- [evaluation-service](https://github.com/jobucaldas/evaluation-service/tree/t4) - avaliação das flags com cache Redis e envio de eventos para SQS
+- [analytics-service](https://github.com/jobucaldas/analytics-service/tree/t4) - consumo de eventos da SQS e gravação no DynamoDB
 
-## Visão geral da arquitetura
+## Arquitetura
 
 O ToggleMaster é composto por cinco serviços de aplicação:
 
@@ -51,11 +51,26 @@ Na AWS, os serviços rodam em um cluster EKS. As dependências de dados são ext
 - ECR para imagens Docker dos cinco serviços
 - Secrets Manager integrado ao Kubernetes por External Secrets
 
+Observabilidade:
+
+```text
+Serviços (OpenTelemetry)
+  -> OTel Collector
+       -> Prometheus (métricas)  -> Grafana
+       -> Loki (logs)            -> Grafana
+       -> New Relic (traces e Service Map)
+Prometheus -> Alertmanager
+  -> Jira Service Management (incidente)
+  -> Discord (notificação)
+  -> AWS Lambda (self-healing)
+```
+
 ## Estrutura deste repositório
 
 ```text
 3DCLT-TC/
-  docker-compose.yml
+  .github/workflows/      pipelines
+  docker-compose.yml      ambiente local
   buildImages.sh
   setupServices.sh
   migrateDB.sh
@@ -66,13 +81,15 @@ Na AWS, os serviços rodam em um cluster EKS. As dependências de dados são ext
       targeting-service/
       evaluation-service/
       analytics-service/
-    eso/
-    helm/
+    eso/                  External Secrets
+    helm/                 componentes do cluster e stack de observabilidade
+    migrations/           SQL dos bancos
+    observability/        dashboard, alertas e secrets da observabilidade
   terraform/
     deployments/
-      shared/
-      togglemaster-infra/
-      togglemaster-app/
+      shared/             bucket do estado (Cloudflare R2) e ECR
+      togglemaster-infra/ VPC, EKS, ArgoCD, bancos, filas
+      togglemaster-app/   Applications do ArgoCD e self-healing
     modules/
       argo/
       dynamodb/
@@ -82,21 +99,27 @@ Na AWS, os serviços rodam em um cluster EKS. As dependências de dados são ext
       r2/
       rds/
       redis/
+      self-healing/
       sqs/
       vpc/
 ```
 
+Cada pasta grande tem o seu README com os detalhes:
+
+- [k8s/README.md](k8s/README.md): o que o ArgoCD aplica, rotas do Ingress e acesso ao ArgoCD
+- [terraform/README.md](terraform/README.md): camadas, rede e como rodar sem o pipeline
+
 ## Execução local
 
-Clone os repositórios da branch `t3` no mesmo diretório:
+Clone os repositórios da branch `t4` no mesmo diretório:
 
 ```bash
-git clone -b t3 https://github.com/jobucaldas/3DCLT-TC.git
-git clone -b t3 https://github.com/jobucaldas/auth-service.git
-git clone -b t3 https://github.com/jobucaldas/analytics-service.git
-git clone -b t3 https://github.com/jobucaldas/evaluation-service.git
-git clone -b t3 https://github.com/jobucaldas/flag-service.git
-git clone -b t3 https://github.com/jobucaldas/targeting-service.git
+git clone -b t4 https://github.com/jobucaldas/3DCLT-TC.git
+git clone -b t4 https://github.com/jobucaldas/auth-service.git
+git clone -b t4 https://github.com/jobucaldas/analytics-service.git
+git clone -b t4 https://github.com/jobucaldas/evaluation-service.git
+git clone -b t4 https://github.com/jobucaldas/flag-service.git
+git clone -b t4 https://github.com/jobucaldas/targeting-service.git
 ```
 
 Ainda no diretório pai que contém todos os repositórios, crie os arquivos `.env` dos serviços a partir dos exemplos:
@@ -109,7 +132,7 @@ cp flag-service/.env.example flag-service/.env
 cp targeting-service/.env.example targeting-service/.env
 ```
 
-Entre no repositório principal e suba os bancos, dependências locais e serviços:
+Entre no repositório principal e suba os bancos, dependências locais e serviços (testado com Docker e Podman):
 
 ```bash
 cd 3DCLT-TC
@@ -146,157 +169,169 @@ Veja a observabilidade local (depois de fazer algumas requisições acima):
 | Traces | http://localhost:16686 (Jaeger) |
 | Alertas e métricas | http://localhost:9090 (Prometheus) |
 | Dashboard | http://localhost:3000 (Grafana) |
+| Logs | http://localhost:3000, Explore, Loki |
 
-No local, os logs e as métricas de CPU e memória do dashboard ficam vazios. Eles só existem no cluster.
+O compose usa o mesmo dashboard e os mesmos alertas do cluster. O Jaeger substitui o New Relic. Os logs dos serviços Python chegam ao Loki por OTLP. Os de Go e as métricas de CPU e memória só existem no cluster.
 
-## Infraestrutura AWS
+## Ambiente na AWS
 
-A infraestrutura da Fase 3 fica em `terraform/deployments/togglemaster-infra` e cria:
+O ambiente `prod` roda na região `us-east-1`, no cluster EKS `togglemaster-prod-eks`. Mudanças entram por PR no `t4` e são aplicadas pelo GitHub Actions, com aprovação de um dos aprovadores do environment `prod`.
 
-- VPC com subnets públicas e privadas
-- NAT Gateway e Internet Gateway
-- EKS com node group gerenciado
-- Repositórios ECR para os serviços
-- RDS PostgreSQL para os serviços com banco relacional
-- ElastiCache Redis
-- SQS Standard
-- DynamoDB
-- KMS
-- Secrets Manager
-- IAM Roles para EKS, External Secrets, KEDA e workloads da aplicação
-
-Exemplo de execução:
+### Acesso
 
 ```bash
-cd terraform/deployments/togglemaster-infra
-cp terraform.tfvars.example terraform.tfvars
-tofu init
-tofu fmt
-tofu validate
-tofu plan
-tofu apply
+aws eks update-kubeconfig --region us-east-1 --name togglemaster-prod-eks
+kubectl get applications -n argocd-prod
 ```
 
-Configure o `kubectl` com o cluster criado:
+A API fica atrás do Ingress e pede a `SERVICE_API_KEY`:
 
 ```bash
-tofu output eks_cluster_name
-aws eks update-kubeconfig --region us-east-1 --name <cluster-name>
+BASE_URL="http://$(kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')"
+API_KEY=$(aws secretsmanager get-secret-value --region us-east-1 --secret-id togglemaster/prod/evaluation-service --query SecretString --output text | jq -r .SERVICE_API_KEY)
+
+curl -X POST "$BASE_URL/flags/flags" -H "Authorization: Bearer $API_KEY" -H 'Content-Type: application/json' \
+  -d '{"name":"enable-new-dashboard","description":"Demo","is_enabled":true}'
+curl -X POST "$BASE_URL/targeting/rules" -H "Authorization: Bearer $API_KEY" -H 'Content-Type: application/json' \
+  -d '{"flag_name":"enable-new-dashboard","is_enabled":true,"rules":{"type":"PERCENTAGE","value":100}}'
+curl "$BASE_URL/evaluation/evaluate?user_id=user-123&flag_name=enable-new-dashboard"
 ```
 
-## Build e publicação das imagens
+### Secrets
 
-Após criar os repositórios ECR, faça build e push das imagens:
+Ficam no AWS Secrets Manager e chegam ao cluster pelo External Secrets. Os de `grafana`, `newrelic`, `jsm` e `discord` são criados uma vez à mão e reaproveitados: o destroy não apaga. Os outros o Terraform cria.
+
+| Secret | Chaves | Quem Preenche |
+| --- | --- | --- |
+| `togglemaster/prod/grafana` | `admin-user`, `admin-password` | SRE -> preenche manualmente |
+| `togglemaster/prod/newrelic` | `NEW_RELIC_LICENSE_KEY` | SRE -> New Relic: API Keys, chave do tipo INGEST - LICENSE |
+| `togglemaster/prod/jsm` | `api_key` | SRE -> JSM: Operations, Integrations, integração Prometheus |
+| `togglemaster/prod/discord` | `webhook_url` | SRE -> Discord: Configurações do canal, Integrações, Webhooks |
+| `togglemaster/prod/self-healing` | URL e token da Lambda | Terraform |
+| `togglemaster/prod/<serviço>` | `MASTER_KEY` (auth) e `SERVICE_API_KEY` | A pipeline preenche durante CICD |
+
+O SRE cria o secret uma vez e troca o valor quando precisar:
 
 ```bash
-cd 3DCLT-TC
-./buildImages.sh latest
+aws secretsmanager create-secret --region us-east-1 --name togglemaster/prod/grafana \
+  --secret-string '{"admin-user":"admin","admin-password":"<senha>"}'
+aws secretsmanager put-secret-value --region us-east-1 --secret-id togglemaster/prod/grafana \
+  --secret-string '{"admin-user":"admin","admin-password":"<nova-senha>"}'
 ```
 
-O script procura os diretórios `*-service`, obtém a URI correspondente no ECR e publica cada imagem com a tag informada.
+### Criar e destruir o ambiente
+
+- **Continuous Deployment** cria o que faltar e atualiza o resto. Na primeira subida, ele abre o PR `chore(prod): sync infra urls` com os endereços novos dos bancos e da fila. Depois do merge, roda de novo, migra os bancos e cria as chaves.
+- **Deploy Demo Environment** sobe só a infra, para destravar o plan do app num PR.
+- **Terraform Destroy** com `prod` derruba tudo. Depois, confira no console se não sobraram Load Balancers, volumes EBS, snapshots ou Elastic IPs.
+
+## GitHub Actions
+
+| Workflow | Quando roda | O que faz |
+| --- | --- | --- |
+| Lint Workflow e Security Tests | Todo PR e push no `t4` | pre-commit, tflint, kube-linter, Gitleaks, Trivy e Checkov |
+| Terraform Plan | PR que mexe em `terraform/` | Comenta no PR a tabela do que vai ser criado, modificado ou destruído. O plan do app falha se o cluster não existir |
+| Continuous Deployment | Merge no `t4` | Sobe a infra e o app, espera o ArgoCD, sincroniza URLs, migra os bancos e cria as chaves |
+| Deploy Demo Environment | Manual | Sobe só a infra (VPC, EKS, bancos). Serve para destravar o plan de um PR |
+| Simulate Auth Failure | Manual | Para o banco do `auth-service` e manda carga por 20 minutos |
+| Terraform Destroy | Manual | Destrói o app e a infra |
+
+Nos repositórios dos serviços, o CI faz build da imagem, publica no ECR e abre um PR `chore(gitops)` aqui no `t4` trocando a tag. Ao mergear, o ArgoCD atualiza o cluster.
+
+## Terraform
+
+O Terraform é aplicado em três camadas, cada uma com seu estado no Cloudflare R2:
+
+- **shared:** bucket do estado e repositórios ECR
+- **infra:** rede, EKS, ArgoCD, bancos, fila e secrets
+- **app:** Applications do ArgoCD e self-healing
+
+Detalhes de cada camada, da rede e de como rodar sem o pipeline: **[terraform/README.md](terraform/README.md)**.
 
 ## Kubernetes
 
-Os manifests Kubernetes ficam em `k8s/` e são organizados por responsabilidade:
+Tudo em `k8s/` é aplicado pelo ArgoCD, a partir da branch `t4`. Cada serviço tem seu namespace e é exposto pelo Ingress Nginx.
 
-- `k8s/app` contém Deployments, Services, Ingress, ConfigMaps, ExternalSecrets, NetworkPolicies, ServiceAccounts e regras de escala dos cinco serviços.
-- `k8s/eso` contém a configuração do External Secrets para integração com o AWS Secrets Manager.
-- `k8s/helm` contém os componentes de apoio do cluster: External Secrets, Nginx Ingress Controller, KEDA e Metrics Server.
+Pastas, rotas do Ingress, comandos úteis e acesso ao ArgoCD: **[k8s/README.md](k8s/README.md)**.
 
-Instale os componentes de apoio:
+## Observabilidade
 
-```bash
-kubectl apply -k k8s/helm
-```
+| Ferramenta | Para quê | Como abrir |
+| --- | --- | --- |
+| OTel Collector | Recebe métricas, logs e traces e envia para os outros | - |
+| Prometheus | Guarda as métricas e avalia os alertas | `kubectl port-forward -n monitoring svc/kps-prometheus 9090` |
+| Loki | Guarda os logs de todos os contêineres | Pelo Grafana, em Explore |
+| Grafana | Dashboard e busca de logs | `kubectl port-forward -n monitoring svc/kps-grafana 3000:80` |
+| Alertmanager | Envia os alertas para JSM, Discord e Lambda | `kubectl port-forward -n monitoring svc/kps-alertmanager 9093` |
+| New Relic | Traces e Service Map | https://one.newrelic.com, APM & Services |
 
-Depois aplique a aplicação:
-
-```bash
-kubectl apply -k k8s
-```
-
-Verifique o estado dos recursos:
-
-```bash
-kubectl get pods -A
-kubectl get ingress -A
-kubectl get externalsecrets -A
-kubectl get hpa -A
-kubectl get scaledobject -A
-```
-
-## Migração dos bancos
-
-Os bancos da AWS são privados, por isso as migrações são executadas a partir de um pod temporário dentro do cluster:
-
-```bash
-./migrateDB.sh
-```
-
-O script aplica os arquivos `db/init.sql` dos serviços:
-
-- `auth-service`
-- `flag-service`
-- `targeting-service`
-
-## Smoke tests no cluster
-
-Rotas esperadas via Ingress:
+No Grafana, entre com o usuário e a senha do secret `togglemaster/prod/grafana` e abra o dashboard **ToggleMaster - Saude do ecossistema**. Para logs, use Explore, Loki, e busque por exemplo:
 
 ```text
-/auth       -> auth-service
-/flags      -> flag-service
-/targeting  -> targeting-service
-/evaluation -> evaluation-service
-/analytics  -> analytics-service
+{k8s_namespace_name="togglemaster-auth"}
 ```
 
-Exemplos de validação:
+Cada serviço só precisa saber onde está o Collector:
+
+```text
+OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector.monitoring.svc.cluster.local:4318
+OTEL_SERVICE_NAME=<nome-do-servico>
+```
+
+Os arquivos:
+
+- `k8s/helm/otel-collector.yaml`: para onde vai cada tipo de dado
+- `k8s/observability/dashboards/togglemaster.json`: o dashboard
+- `k8s/observability/alerts.yaml`: os alertas
+
+Se a conta do New Relic for da região EU, troque `otlp.nr-data.net` por `otlp.eu01.nr-data.net` em `k8s/helm/otel-collector.yaml`.
+
+Prometheus e Loki guardam 24h e perdem os dados se o pod reiniciar.
+
+## Alertas e self-healing
+
+1. O alerta `ServiceHighErrorRate` dispara quando um serviço passa de 5% de respostas 5xx por 2 minutos.
+2. O Alertmanager abre incidente no JSM, manda mensagem no Discord e, se for o `auth-service`, chama a Lambda `togglemaster-prod-self-healing`.
+3. A Lambda olha o banco do `auth-service`:
+   - parado: liga o banco;
+   - parando ou ligando: responde 503, e o Alertmanager tenta de novo até o banco terminar de parar;
+   - no ar: reinicia o `deployment/auth-service`, igual ao `kubectl rollout restart`. Não reinicia de novo antes de 10 minutos.
+
+Para testar, rode o **Simulate Auth Failure**. Ele para o banco do `auth-service` e manda `POST /admin/keys` por 20 minutos, que devolve 500 sem o banco.
+
+Acompanhe:
 
 ```bash
-BASE_URL="http://<load-balancer-dns>"
-API_KEY="tm_key_..."
-
-curl "$BASE_URL/auth/health"
-curl "$BASE_URL/flags/health"
-curl "$BASE_URL/targeting/health"
-curl "$BASE_URL/evaluation/health"
-
-curl "$BASE_URL/auth/validate" -H "Authorization: Bearer $API_KEY"
-curl "$BASE_URL/evaluation/evaluate?user_id=user-123&flag_name=enable-new-dashboard"
-curl "$BASE_URL/evaluation/evaluate?user_id=user-123&flag_name=gradual-checkout"
+aws logs tail /aws/lambda/togglemaster-prod-self-healing --follow
+aws rds describe-db-instances --db-instance-identifier togglemaster-prod-auth-service-db --query 'DBInstances[0].DBInstanceStatus'
+kubectl get pods -n togglemaster-auth -w
 ```
 
-## Escalabilidade
+### Diagnóstico do Alertmanager
 
-A Fase 3 inclui dois mecanismos de escala:
+Para testar só o roteamento (JSM, Discord e Lambda), sem derrubar nada, mande um alerta falso direto ao Alertmanager:
+
+```bash
+kubectl port-forward -n monitoring svc/kps-alertmanager 9093
+curl -XPOST localhost:9093/api/v2/alerts -H 'Content-Type: application/json' \
+  -d '[{"labels":{"alertname":"ServiceHighErrorRate","service_name":"auth-service","severity":"critical"},"annotations":{"summary":"Teste","description":"Alerta de teste"}}]'
+```
+
+Com o banco no ar, a Lambda reinicia o `auth-service`. Para testar a falha de verdade, use o **Simulate Auth Failure**.
+
+Segurança:
+
+- A URL da Lambda é pública, mas exige o token do secret `togglemaster/prod/self-healing`.
+- No cluster, a Lambda só pode alterar o `deployment/auth-service` (`k8s/app/auth-service/self-healing-rbac.yaml`).
+- Na AWS, só pode consultar e ligar o banco do `auth-service`.
+
+## Escalabilidade
 
 - `evaluation-service`: HorizontalPodAutoscaler por CPU, com alvo de 70% e até 5 réplicas.
 - `analytics-service`: KEDA com trigger em SQS, escalando conforme o tamanho da fila.
 
-Comandos úteis durante testes de carga:
-
 ```bash
 kubectl get hpa -n togglemaster-evaluation
-kubectl get pods -n togglemaster-evaluation
 kubectl get scaledobject -n togglemaster-analytics
-kubectl get pods -n togglemaster-analytics
-```
-
-Exemplo de carga no endpoint de avaliação:
-
-```bash
 ab -k -n 2000 -c 50 "$BASE_URL/evaluation/evaluate?user_id=ab-user&flag_name=enable-new-dashboard"
 ```
-
-## Limpeza
-
-Ao final dos testes, remova a aplicação e destrua a infraestrutura para evitar custos:
-
-```bash
-kubectl delete -k k8s
-cd terraform/deployments/togglemaster-infra
-tofu destroy
-```
-
-Também confira no console da AWS se não restaram Load Balancers, volumes EBS, snapshots, Elastic IPs ou outros recursos cobrados separadamente.
