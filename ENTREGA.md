@@ -13,8 +13,7 @@ Repos:
 - [flag-service](https://github.com/jobucaldas/flag-service/tree/t4)
 - [targeting-service](https://github.com/jobucaldas/targeting-service/tree/t4)
 
-// TODO: adicionar link tc4
-Vídeo: [https://youtu.be/](https://www.youtube.com/)
+Vídeo: [https://youtu.be/](https://www.youtube.com/watch?v=yel5coDwszQ)
 
 ## Overview da Fase 4
 
