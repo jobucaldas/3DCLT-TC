@@ -32,6 +32,6 @@ redis_node_type          = "cache.t4g.micro"
 dynamodb_table_name      = "ToggleMasterAnalytics"
 
 eks_node_instance_types = ["t3.medium"]
-eks_desired_nodes       = 2
+eks_desired_nodes       = 3
 eks_min_nodes           = 1
 eks_max_nodes           = 3
