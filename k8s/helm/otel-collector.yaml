@@ -65,8 +65,8 @@ spec:
               endpoint: http://kps-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
               resource_to_telemetry_conversion:
                 enabled: true
-            otlp/newrelic:
-              endpoint: otlp.nr-data.net:4317
+            otlp_http/newrelic:
+              endpoint: https://otlp.nr-data.net
               headers:
                 api-key: ${env:NEW_RELIC_LICENSE_KEY}
           service:
@@ -74,7 +74,7 @@ spec:
               traces:
                 receivers: [otlp]
                 processors: [memory_limiter, k8sattributes, batch]
-                exporters: [spanmetrics, otlp/newrelic]
+                exporters: [spanmetrics, otlp_http/newrelic]
               metrics:
                 receivers: [otlp, spanmetrics]
                 processors: [memory_limiter, k8sattributes, batch]
