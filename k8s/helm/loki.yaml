@@ -37,6 +37,12 @@ spec:
           replicas: 1
           persistence:
             enabled: false
+          extraVolumes:
+          - name: loki-data
+            emptyDir: {}
+          extraVolumeMounts:
+          - name: loki-data
+            mountPath: /var/loki
           resources:
             requests:
               cpu: 100m
