@@ -13,7 +13,7 @@ Repos:
 - [flag-service](https://github.com/jobucaldas/flag-service/tree/t4)
 - [targeting-service](https://github.com/jobucaldas/targeting-service/tree/t4)
 
-Vídeo: [https://youtu.be/](https://www.youtube.com/watch?v=yel5coDwszQ)
+Vídeo: [https://youtu.be/watch?v=yel5coDwszQ](https://www.youtube.com/watch?v=yel5coDwszQ)
 
 ## Overview da Fase 4
 
@@ -205,20 +205,17 @@ O ambiente é derrubado pela pipeline [Terraform Destroy](https://github.com/job
 
 ## Para completar
 
-// TODO: preencher com os prints. Apague este aviso quando terminar.
-
 ### Evidências
 
-// TODO: print do dashboard do Grafana
+<img width="2556" height="1270" alt="image" src="https://github.com/user-attachments/assets/82bb15d6-baf8-468d-8379-afca06001829" />
 
-// TODO: print do trace distribuído no New Relic
+<img width="2558" height="1275" alt="image" src="https://github.com/user-attachments/assets/56ed26a1-b9e0-4559-ad2d-fae8f93af2d5" />
 
-// TODO: print do Service Map no New Relic com os 5 serviços
+<img width="987" height="840" alt="image" src="https://github.com/user-attachments/assets/fecd20c8-17c3-43b9-9c99-34a6a4265d75" />
 
-// TODO: print da notificação do incidente no Discord
-
-// TODO: print do log da Lambda de self-healing
+<img width="2251" height="1015" alt="image" src="https://github.com/user-attachments/assets/ebb58369-cfbb-420a-9f44-bcaf39473745" />
 
 ### Custo
 
-// TODO: print do custo durante a Fase 4
+<img width="2557" height="1268" alt="image" src="https://github.com/user-attachments/assets/2dcf8b0d-ba41-48f2-8cd4-9b5726262f01" />
+
